@@ -11,7 +11,7 @@ The project demonstrates the power of RL techniques by providing a modular frame
 
 ---
 
-## 3. Build and Run
+## 1. Build and Run
 
 1. Clone this repository:
    ```bash
@@ -30,14 +30,14 @@ pip install .
 
 ---
 
-## 4. Demonstration
+## 2. Demonstration
 Below is a demonstration of the project in action:
 
 ![Pac-Man Gameplay](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/demo.gif)
 
 ---
 
-## 5. Application Architecture
+## 3. Application Architecture
 
 The project is structured into modular components, making it easy to extend or replace individual parts.
 
