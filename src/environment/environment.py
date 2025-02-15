@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from src.controller import ActionSpaceEnum
-from src.state import Observation
+from src.state import Observation, ActionSpaceEnum
 
 
 class PacmanEnvironment(ABC):
@@ -11,7 +10,7 @@ class PacmanEnvironment(ABC):
     """
 
     @abstractmethod
-    def reset(self) -> None:
+    def reset(self) -> Observation:
         """
         Reset the environment to its initial state.
         """

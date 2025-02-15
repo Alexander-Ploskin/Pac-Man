@@ -1,5 +1,5 @@
 from src.environment import PacmanEnvironment
-from src.state import Position, Observation, Map
+from src.state import Position, Observation, Map, ActionSpaceEnum
 
 
 class BasicPacmanEnvironment(PacmanEnvironment):
@@ -24,7 +24,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         self.cell_size = cell_size
         self.max_steps = max_steps
 
-    def reset(self):
+    def reset(self) -> Observation:
         """
         Reset the environment to its initial configuration.
 
@@ -72,10 +72,10 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             done=False,
             score=0,
             step_count=0,
-            map=Map
+            map=self.map
         )
 
-    def step(self, action):
+    def step(self, action: ActionSpaceEnum) -> Observation:
         """
         Perform one step in the environment given an action.
 
@@ -105,7 +105,12 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             )
 
         # Mapping for actions to directional moves: up, right, down, left.
-        directions = {0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)}
+        directions = {
+            ActionSpaceEnum.UP: (-1, 0),
+            ActionSpaceEnum.RIGHT: (0, 1),
+            ActionSpaceEnum.DOWN: (1, 0),
+            ActionSpaceEnum.LEFT: (0, -1)
+        }
         delta = directions.get(action, (0, 0))
         
         current_position = self.map.pacman_position

@@ -1,22 +1,5 @@
 from abc import ABC, abstractmethod
-from enum import Enum
-from src.state import Observation
-
-
-class ActionSpaceEnum(int, Enum):
-    """
-    Enumeration representing possible actions for Pac-Man.
-
-    Attributes:
-        UP (int): Represents moving upward.
-        RIGHT (int): Represents moving to the right.
-        DOWN (int): Represents moving downward.
-        LEFT (int): Represents moving to the left.
-    """
-    UP = 0
-    RIGHT = 1
-    DOWN = 2
-    LEFT = 3
+from src.state import Observation, ActionSpaceEnum
 
 
 class Controller(ABC):
