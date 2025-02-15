@@ -106,10 +106,10 @@ class BasicPacmanEnvironment(PacmanEnvironment):
 
         # Mapping for actions to directional moves: up, right, down, left.
         directions = {
-            ActionSpaceEnum.UP: (-1, 0),
-            ActionSpaceEnum.RIGHT: (0, 1),
-            ActionSpaceEnum.DOWN: (1, 0),
-            ActionSpaceEnum.LEFT: (0, -1)
+            ActionSpaceEnum.UP: (0, 1),
+            ActionSpaceEnum.RIGHT: (1, 0),
+            ActionSpaceEnum.DOWN: (0, -1),
+            ActionSpaceEnum.LEFT: (-1, 0)
         }
         delta = directions.get(action, (0, 0))
         
@@ -118,11 +118,11 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         new_y = current_position.y + delta[1]
         new_position = Position(new_x, new_y)
 
-        reward = -0.1  # Default step cost
+        reward = -2  # Default step cost
         
         # Check if new position is a wall; if so, apply a collision penalty.
         if new_position in self.map.walls:
-            reward = -5
+            reward = -50
             new_position = current_position  # Remain in the same position.
         else:
             # Move Pac-Man to the new position.

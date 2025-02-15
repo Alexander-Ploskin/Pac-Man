@@ -61,10 +61,10 @@ class Map:
     ghosts: Set[Position] = field(default_factory=set)
 
     directions = {
-        ActionSpaceEnum.UP: (-1, 0),
-        ActionSpaceEnum.RIGHT: (0, 1),
-        ActionSpaceEnum.DOWN: (1, 0),
-        ActionSpaceEnum.LEFT: (0, -1)
+        ActionSpaceEnum.UP: (0, 1),
+        ActionSpaceEnum.RIGHT: (1, 0),
+        ActionSpaceEnum.DOWN: (0, -1),
+        ActionSpaceEnum.LEFT: (-1, 0)
     }
 
     def __hash__(self):

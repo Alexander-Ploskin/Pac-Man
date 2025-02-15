@@ -33,18 +33,19 @@ class QLearnAgent(Controller):
         observation = env.step(action)
     """
 
-    def __init__(self, alpha=0.2, epsilon=0.25, gamma=0.95, numTraining = 10000):
+    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.1, gamma=0.98, numTraining = 50000):
         """
         Initializes the QLearnAgent with specified parameters.
         Args:
             alpha (float): learning rate
-            epsilon (float): exploration rate
+            train_epsilon (float): train exploration rate
+            test_epsilon (float): test exploration rate
             gamma (float): discount factor
             numTraining (int): number of training episodes
         """
         self.alpha = float(alpha)
-        self.epsilon = float(epsilon)
-        self.stochastic = self.epsilon > 0
+        self.test_epsilon = float(test_epsilon)
+        self.train_epsilon = float(train_epsilon)
         self.gamma = float(gamma)
         self.numTraining = int(numTraining)
         # Q-values
@@ -109,7 +110,7 @@ class QLearnAgent(Controller):
         legal_actions = map.get_legal_actions(state)
         # in the first half of training, the agent is forced not to stop
         # or turn back while not being chased by the ghost
-        if self.numTraining > 0 and self.episodesPassed / self.numTraining < 1.0:
+        if self.numTraining > 0 and self.episodesPassed / self.numTraining < 0.5 or not self.train_:
             if self.lastAction is not None:
                 # distance0 = state.getPacmanPosition()[0]- state.getGhostPosition(1)[0]
                 # distance1 = state.getPacmanPosition()[1]- state.getGhostPosition(1)[1]
@@ -117,7 +118,8 @@ class QLearnAgent(Controller):
                 #     best_action = last_action.get_opposite()
                 if self.lastAction.get_opposite() in legal_actions:
                     legal_actions.remove(self.lastAction.get_opposite())
-        if self.stochastic and random.random() < self.epsilon:
+        if ((self.train_ and random.random() < self.train_epsilon) or 
+                (not self.train_ and random.random() < self.test_epsilon)):
             return random.choice(legal_actions) if legal_actions else None
 
         best_action = None
@@ -168,13 +170,14 @@ class QLearnAgent(Controller):
         """
         self.q_value.clear()
         self.episodesPassed = 0
-        self.stochastic = True
+        self.train_ = True
 
         for i in range(self.numTraining):
-            # if i < self.numTraining * 0.5:
-            #     self.epsilon = self.epsilon * ((self.numTraining-(i%25)) / self.numTraining)
+            if i < self.numTraining * 0.5:
+                self.train_epsilon = self.train_epsilon * ((self.numTraining-(i % 25)) / self.numTraining)
             self.run_episode(env)
-            print(i)
+            if (i + 1) % 100 == 0:
+                print(i + 1)
 
     def get_action(self, observation: Observation) -> ActionSpaceEnum | None:
         """
@@ -186,11 +189,11 @@ class QLearnAgent(Controller):
         Returns:
             ActionSpaceEnum | None: The selected action; returns None if no valid action is available.
         
-        This method sets stochastic to False before determining 
-        and returning the best action based on current knowledge.
+        This method returns the best action based on current knowledge.
         """
-        self.stochastic = False
+        self.train_ = False
 
         action = self.best_action(observation.map.pacman_position, observation.map)
+        self.lastAction = action
 
         return action
