@@ -19,12 +19,20 @@ The project demonstrates the power of RL techniques by providing a modular frame
    cd Pac-Man
    ```
 2. Install the dependencies:
-```bash
-pip install .
-```
-3. Execute the main script:
    ```bash
-   python main.py
+   pip install .
+   ```
+3. To run random walk policy:
+   ```bash
+   python main.py random
+   ```
+   To run Q-learning algorithm with states == position of packman:
+   ```bash
+   python main.py qlearn
+   ```
+    To run Q-learning algorithm with states == full map's objects positions:
+   ```bash
+   python main.py qlearn --full_hash
    ```
 4. Observe Pac-Man navigating the maze with a basic random-action controller.
 
