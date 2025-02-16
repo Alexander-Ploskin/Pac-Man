@@ -77,9 +77,9 @@ class Map:
         Returns:
             int: Hash value of the Map object.
         """
-        return hash((frozenset(self.walls), frozenset(self.pellets), frozenset(self.ghosts), self.pacman_position))
+        return hash((self.pacman_position))
 
-    def _state_after_action(self, action: ActionSpaceEnum, state: Position | None = None) -> Position:
+    def _state_after_action(self, action: ActionSpaceEnum) -> Position:
         """
         Calculates new position after taking a specified action.
 
@@ -92,8 +92,7 @@ class Map:
         Returns:
             Position: The new position after taking the action.
         """
-        if state is None:
-            state = self.pacman_position
+        state = self.pacman_position
         delta = self.directions.get(action, (0, 0))
         
         new_x = state.x + delta[0]
@@ -102,7 +101,7 @@ class Map:
 
         return new_position
 
-    def get_legal_actions(self, state: Position | None = None) -> List[ActionSpaceEnum]:
+    def get_legal_actions(self) -> List[ActionSpaceEnum]:
         """
         Determines the list of legal actions that can be taken from a given state.
 
@@ -115,15 +114,20 @@ class Map:
         Returns:
             List[ActionSpaceEnum]: A list of legal actions from the given state.
         """
-        if state is None:
-            state = self.pacman_position
+
         legal_actions: List[ActionSpaceEnum] = []
         for action in self.directions.keys():
-            next_state = self._state_after_action(action, state)
+            next_state = self._state_after_action(action)
             if next_state in self.walls or next_state in self.ghosts:
                 continue
             legal_actions.append(action)
         return legal_actions
+
+
+class MapFullHash(Map):
+    def __hash__(self):
+        return hash((frozenset(self.pellets), frozenset(self.ghosts), self.pacman_position))
+
 
 @dataclass
 class Observation:

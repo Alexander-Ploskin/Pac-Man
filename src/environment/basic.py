@@ -1,5 +1,5 @@
 from src.environment import PacmanEnvironment
-from src.state import Position, Observation, Map, ActionSpaceEnum
+from src.state import Position, Observation, Map, ActionSpaceEnum, MapFullHash
 
 
 class BasicPacmanEnvironment(PacmanEnvironment):
@@ -11,7 +11,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
     hitting walls.
     """
 
-    def __init__(self, grid_size=10, cell_size=40, max_steps=200):
+    def __init__(self, grid_size=10, cell_size=40, max_steps=200, full_hash=False):
         """
         Initialize the environment parameters and reset it.
 
@@ -19,10 +19,12 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             grid_size (int): Number of cells per side in the grid.
             cell_size (int): Pixel size of each cell (used for rendering).
             max_steps (int): Maximum number of steps allowed in an episode.
+            full_hash (bool): Use full hashable maps
         """
         self.grid_size = grid_size
         self.cell_size = cell_size
         self.max_steps = max_steps
+        self.full_hash = full_hash
 
     def reset(self) -> Observation:
         """
@@ -61,11 +63,18 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         self.step_count = 0
         self.done = False
         
-        self.map = Map(
-            walls=walls,
-            pellets=pellets,
-            pacman_position=pacman_position
-        )
+        if self.full_hash:
+            self.map = MapFullHash(
+                walls=walls,
+                pellets=pellets,
+                pacman_position=pacman_position
+            )
+        else:
+            self.map = Map(
+                walls=walls,
+                pellets=pellets,
+                pacman_position=pacman_position
+            )
         
         return Observation(
             reward=0,
@@ -118,7 +127,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         new_y = current_position.y + delta[1]
         new_position = Position(new_x, new_y)
 
-        reward = -2  # Default step cost
+        reward = -4  # Default step cost
         
         # Check if new position is a wall; if so, apply a collision penalty.
         if new_position in self.map.walls:

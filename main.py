@@ -54,7 +54,7 @@ def run_random_controller(grid_size=10, cell_size=40, max_steps=200, framerate=1
     drawer.close()
 
 
-def run_qlearn_controller(grid_size=10, cell_size=40, max_steps=200, framerate=10):
+def run_qlearn_controller(grid_size=10, cell_size=40, max_steps=200, framerate=10, full_hash=False):
     """
     Runs the Pac-Man environment with a Q-learning controller.
 
@@ -63,12 +63,14 @@ def run_qlearn_controller(grid_size=10, cell_size=40, max_steps=200, framerate=1
         cell_size (int): Size of each cell in pixels (default: 40).
         max_steps (int): Maximum number of steps per episode (default: 200).
         framerate (int): Framerate of the game (default: 10).
+        full_hash (bool): Use full hashable maps for states or not (default: False).
     """
     # Initialize the environment, drawer, and controller.
     environment = BasicPacmanEnvironment(
         grid_size=grid_size,
         cell_size=cell_size,
-        max_steps=max_steps
+        max_steps=max_steps,
+        full_hash=full_hash
     )
     drawer = PygameDrawer(
         grid_size=grid_size,
@@ -108,6 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Pac-Man environment with different controllers.")
     parser.add_argument("controller", choices=["random", "qlearn"],
                         help="Choose the controller to run: 'random' or 'qlearn'.")
+    parser.add_argument("--full_hash", action="store_true", help="Use full hashable maps for states or not")
     parser.add_argument("--grid_size", type=int, default=10, help="Size of the grid.")
     parser.add_argument("--cell_size", type=int, default=40, help="Size of each cell in pixels.")
     parser.add_argument("--max_steps", type=int, default=200, help="Maximum number of steps per episode.")
@@ -118,4 +121,4 @@ if __name__ == "__main__":
     if args.controller == "random":
         run_random_controller(args.grid_size, args.cell_size, args.max_steps, args.framerate)
     elif args.controller == "qlearn":
-        run_qlearn_controller(args.grid_size, args.cell_size, args.max_steps, args.framerate)
+        run_qlearn_controller(args.grid_size, args.cell_size, args.max_steps, args.framerate, args.full_hash)

@@ -1,1 +1,1 @@
-from .state import Map, Observation, Position, ActionSpaceEnum
+from .state import Map, Observation, Position, ActionSpaceEnum, MapFullHash

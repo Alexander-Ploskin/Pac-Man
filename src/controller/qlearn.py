@@ -1,6 +1,8 @@
 import random
 from collections import defaultdict
 
+from tqdm import tqdm
+
 from src.controller import Controller
 from src.state import Position, Map, Observation, ActionSpaceEnum
 from src.environment import PacmanEnvironment
@@ -33,7 +35,7 @@ class QLearnAgent(Controller):
         observation = env.step(action)
     """
 
-    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.1, gamma=0.98, numTraining = 50000):
+    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.2, gamma=0.98, numTraining = 2000):
         """
         Initializes the QLearnAgent with specified parameters.
         Args:
@@ -54,9 +56,9 @@ class QLearnAgent(Controller):
         self.episodesPassed: int = 0
         # Last actions in training
         self.lastAction: ActionSpaceEnum | None = None
-        self.lastState: Position | None = None
+        self.lastState: Map | None = None
 
-    def getQValue(self, state: Position, action: ActionSpaceEnum) -> float:
+    def getQValue(self, state: Map, action: ActionSpaceEnum) -> float:
         """
         Retrieves the Q-value for a given state-action pair.
 
@@ -67,23 +69,22 @@ class QLearnAgent(Controller):
         Returns:
             float: The Q-value associated with the given state-action pair.
         """
-        return self.q_value[(state, action)]
+        return self.q_value[hash((state, action))]
 
-    def getMaxQ(self, state: Position, map: Map) -> float:
+    def getMaxQ(self, state: Map) -> float:
         """
         Calculates the maximum Q-value among all legal actions in a given state.
 
         Args:
-            state (Position): The current state of Pac-Man.
-            map (Map): The game map containing legal actions.
+            state (Map): The current state of Pac-Man.
 
         Returns:
             float: The maximum Q-value among legal actions; returns 0.0 if no legal actions are available.
         """
-        q_list = [self.getQValue(state, action) for action in map.get_legal_actions(state)]
+        q_list = [self.getQValue(state, action) for action in state.get_legal_actions()]
         return max(q_list) if q_list else 0.0
 
-    def updateQ(self, state: Position, action: ActionSpaceEnum, reward: float, qmax: float) -> None:
+    def updateQ(self, state: Map, action: ActionSpaceEnum, reward: float, qmax: float) -> None:
         """
         Updates the Q-value for a given state-action pair based on the received reward and maximum future reward.
 
@@ -94,9 +95,9 @@ class QLearnAgent(Controller):
             qmax (float): The maximum Q-value for the next state.
         """
         q = self.getQValue(state, action)
-        self.q_value[(state, action)] = q + self.alpha * (reward + self.gamma * qmax - q)
+        self.q_value[hash((state, action))] = q + self.alpha * (reward + self.gamma * qmax - q)
 
-    def best_action(self, state: Position, map: Map) -> ActionSpaceEnum | None:
+    def best_action(self, state: Map) -> ActionSpaceEnum | None:
         """
         Determines the best action to take in a given state based on current Q-values.
 
@@ -107,7 +108,7 @@ class QLearnAgent(Controller):
         Returns:
             ActionSpaceEnum | None: The best action to take; returns None if no legal actions are available.
         """
-        legal_actions = map.get_legal_actions(state)
+        legal_actions = state.get_legal_actions()
         # in the first half of training, the agent is forced not to stop
         # or turn back while not being chased by the ghost
         if self.numTraining > 0 and self.episodesPassed / self.numTraining < 0.5 or not self.train_:
@@ -133,7 +134,7 @@ class QLearnAgent(Controller):
 
         return best_action
 
-    def run_episode(self, env: PacmanEnvironment) -> None:
+    def run_episode(self, env: PacmanEnvironment) -> int:
         """
         Runs a single episode of training in the specified environment.
 
@@ -142,21 +143,25 @@ class QLearnAgent(Controller):
     
         This method resets the environment and continues until the episode is done,
         updating Q-values based on actions taken and rewards received.
+
+        returns: score
         """
         observation = env.reset()
         self.lastAction = None
-        self.lastState = observation.map.pacman_position
+        self.lastState = observation.map
 
         while not observation.done:
-            action = self.best_action(observation.map.pacman_position, observation.map)
+            action = self.best_action(observation.map)
             if action is None:
                 break
             self.lastAction = action
             observation = env.step(action)
-            qmax = self.getMaxQ(observation.map.pacman_position, observation.map)
+            qmax = self.getMaxQ(observation.map)
             self.updateQ(self.lastState, action, observation.reward, qmax)
-            self.lastState = observation.map.pacman_position
+            self.lastState = observation.map
         self.episodesPassed += 1
+
+        return observation.score
 
     def train(self, env: PacmanEnvironment) -> None:
         """
@@ -171,13 +176,20 @@ class QLearnAgent(Controller):
         self.q_value.clear()
         self.episodesPassed = 0
         self.train_ = True
+        mean_score = 0.0
 
-        for i in range(self.numTraining):
+        pbar = tqdm(range(self.numTraining), total=self.numTraining)
+        for i in pbar:
             if i < self.numTraining * 0.5:
-                self.train_epsilon = self.train_epsilon * ((self.numTraining-(i % 25)) / self.numTraining)
-            self.run_episode(env)
+                self.train_epsilon = self.train_epsilon * 0.9995
+                # pbar.set_description(f"Train epsilon: {self.train_epsilon}")
+            score = self.run_episode(env)
+            mean_score += score
             if (i + 1) % 100 == 0:
-                print(i + 1)
+                pbar.set_description(f"Mean score on eposodes: {mean_score / (i + 1):.0f}")
+        
+        self.lastAction = None
+        self.lastState = None
 
     def get_action(self, observation: Observation) -> ActionSpaceEnum | None:
         """
@@ -193,7 +205,16 @@ class QLearnAgent(Controller):
         """
         self.train_ = False
 
-        action = self.best_action(observation.map.pacman_position, observation.map)
+        action = self.best_action(observation.map)
+        if self.lastState is not None and self.lastAction is not None:
+            qmax = self.getMaxQ(observation.map)
+            # print(observation.reward)
+            self.updateQ(self.lastState, self.lastAction, observation.reward, qmax)
+            # print(f"Q-value:", self.getQValue(self.lastState, self.lastAction))
+            # print("Position:", self.lastState, self.lastAction)
+            # print("Hash:", hash((self.lastState, self.lastAction)))
+
+        self.lastState = observation.map
         self.lastAction = action
 
         return action
