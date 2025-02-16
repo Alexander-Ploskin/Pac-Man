@@ -58,7 +58,6 @@ class Map:
     walls: Set[Position]
     pellets: Set[Position]
     pacman_position: Position
-    ghosts: Set[Position] = field(default_factory=set)
 
     directions = {
         ActionSpaceEnum.UP: (0, 1),
@@ -71,7 +70,7 @@ class Map:
         """
         Returns a hash value for the Map object.
 
-        The hash is computed based on the frozen sets of walls, pellets, ghosts and Pac-Man's position.
+        The hash is computed based on the frozen sets of walls, pellets and Pac-Man's position.
         This ensures that the Map object can be used in hash-based data structures.
 
         Returns:
@@ -105,7 +104,7 @@ class Map:
         """
         Determines the list of legal actions that can be taken from a given state.
 
-        An action is considered legal if the resulting position is not occupied by a wall, pellet, or ghost.
+        An action is considered legal if the resulting position is not occupied by a wall, pellet.
         If no `state` is provided, the current position of Pac-Man is used as the starting point.
 
         Args:
@@ -118,7 +117,7 @@ class Map:
         legal_actions: List[ActionSpaceEnum] = []
         for action in self.directions.keys():
             next_state = self._state_after_action(action)
-            if next_state in self.walls or next_state in self.ghosts:
+            if next_state in self.walls:
                 continue
             legal_actions.append(action)
         return legal_actions
@@ -126,7 +125,7 @@ class Map:
 
 class MapFullHash(Map):
     def __hash__(self):
-        return hash((frozenset(self.pellets), frozenset(self.ghosts), self.pacman_position))
+        return hash((frozenset(self.pellets), self.pacman_position))
 
 
 @dataclass

@@ -24,25 +24,27 @@ The project demonstrates the power of RL techniques by providing a modular frame
    ```
 3. To run random walk policy:
    ```bash
-   python main.py random
+   python cli.py random
+   ```
+   To run Q-learning algorithm (full_hash means that states == full map's objects positions):
+   ```bash
+   python cli.py qlearn --full_hash
    ```
    To run Q-learning algorithm with states == position of packman:
    ```bash
    python main.py qlearn
    ```
-    To run Q-learning algorithm with states == full map's objects positions:
-   ```bash
-   python main.py qlearn --full_hash
-   ```
-4. Observe Pac-Man navigating the maze with a basic random-action controller.
 
 ---
 
 ## 2. Demonstration
 Below is a demonstration of the project in action:
 
-![Pac-Man Gameplay](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/demo.gif)
+### Random walk policy:
+![Pac-Man Gameplay random](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/random.gif)
 
+### Q-learning (SARSA update):
+![Pac-Man Gameplay Q-learning](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/q-learning.gif)
 ---
 
 ## 3. Application Architecture

@@ -4,7 +4,7 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from src.controller import Controller
-from src.state import Position, Map, Observation, ActionSpaceEnum
+from src.state import Map, Observation, ActionSpaceEnum
 from src.environment import PacmanEnvironment
 
 
@@ -35,7 +35,7 @@ class QLearnAgent(Controller):
         observation = env.step(action)
     """
 
-    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.2, gamma=0.98, gamma_eps=0.99997, numTraining = 100000):
+    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.2, gamma=0.98, gamma_eps=0.99997, numTraining = 100000, verbose=False):
         """
         Initializes the QLearnAgent with specified parameters.
         Args:
@@ -59,6 +59,7 @@ class QLearnAgent(Controller):
         # Last actions in training
         self.lastAction: ActionSpaceEnum | None = None
         self.lastState: Map | None = None
+        self.verbose = verbose
 
     def getQValue(self, state: Map, action: ActionSpaceEnum) -> float:
         """
@@ -110,14 +111,9 @@ class QLearnAgent(Controller):
             ActionSpaceEnum | None: The best action to take; returns None if no legal actions are available.
         """
         legal_actions = state.get_legal_actions()
-        # in the first half of training, the agent is forced not to stop
-        # or turn back while not being chased by the ghost
         if self.numTraining > 0 and self.episodesPassed / self.numTraining < 0.9 or not self.train_:
             if self.lastAction is not None:
-                # distance0 = state.getPacmanPosition()[0]- state.getGhostPosition(1)[0]
-                # distance1 = state.getPacmanPosition()[1]- state.getGhostPosition(1)[1]
-                # if math.sqrt(distance0**2 + distance1**2) < 2:
-                #     best_action = last_action.get_opposite()
+
                 if self.lastAction.get_opposite() in legal_actions:
                     legal_actions.remove(self.lastAction.get_opposite())
         if ((self.train_ and random.random() < self.train_epsilon) or 
@@ -185,7 +181,6 @@ class QLearnAgent(Controller):
         for i in pbar:
             if i < self.numTraining * 0.6:
                 self.train_epsilon = self.train_epsilon * self.gamma_eps
-                # pbar.set_description(f"")
             score = self.run_episode(env)
             mean_score += score
             if (i + 1) % 100 == 0:
@@ -212,11 +207,12 @@ class QLearnAgent(Controller):
         action = self.best_action(observation.map)
         if self.lastState is not None and self.lastAction is not None:
             qmax = self.getMaxQ(observation.map)
-            # print(observation.reward)
             self.updateQ(self.lastState, self.lastAction, observation.reward, qmax)
-            # print(f"Q-value:", self.getQValue(self.lastState, self.lastAction))
-            # print("Position:", self.lastState, self.lastAction)
-            # print("Hash:", hash((self.lastState, self.lastAction)))
+            if self.verbose:
+                print(observation.reward)
+                print(f"Q-value:", self.getQValue(self.lastState, self.lastAction))
+                print("Position:", self.lastState.pacman_position, self.lastAction)
+                print("Hash:", hash((self.lastState, self.lastAction)))
 
         self.lastState = observation.map
         self.lastAction = action
