@@ -1,6 +1,37 @@
-from dataclasses import dataclass
-from typing import Set
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Set, List
 
+
+class ActionSpaceEnum(int, Enum):
+    """
+    Enumeration representing possible actions for Pac-Man.
+
+    Attributes:
+        UP (int): Represents moving upward.
+        RIGHT (int): Represents moving to the right.
+        DOWN (int): Represents moving downward.
+        LEFT (int): Represents moving to the left.
+    """
+    UP = 0
+    RIGHT = 1
+    DOWN = 2
+    LEFT = 3
+
+    def get_opposite(self) -> 'ActionSpaceEnum':
+        """
+        Returns the opposite action.
+        """
+        if self == ActionSpaceEnum.UP:
+            return ActionSpaceEnum.DOWN
+        elif self == ActionSpaceEnum.DOWN:
+            return ActionSpaceEnum.UP
+        elif self == ActionSpaceEnum.LEFT:
+            return ActionSpaceEnum.RIGHT
+        elif self == ActionSpaceEnum.RIGHT:
+            return ActionSpaceEnum.LEFT
+        else:
+            return self  # Return itself if no opposite is defined
 
 @dataclass(frozen=True)
 class Position:
@@ -27,6 +58,75 @@ class Map:
     walls: Set[Position]
     pellets: Set[Position]
     pacman_position: Position
+
+    directions = {
+        ActionSpaceEnum.UP: (0, 1),
+        ActionSpaceEnum.RIGHT: (1, 0),
+        ActionSpaceEnum.DOWN: (0, -1),
+        ActionSpaceEnum.LEFT: (-1, 0)
+    }
+
+    def __hash__(self):
+        """
+        Returns a hash value for the Map object.
+
+        The hash is computed based on the frozen sets of walls, pellets and Pac-Man's position.
+        This ensures that the Map object can be used in hash-based data structures.
+
+        Returns:
+            int: Hash value of the Map object.
+        """
+        return hash((self.pacman_position))
+
+    def _state_after_action(self, action: ActionSpaceEnum) -> Position:
+        """
+        Calculates new position after taking a specified action.
+
+        If no `state` is provided, the current position of Pac-Man is used as the starting point.
+
+        Args:
+            action (ActionSpaceEnum): The action to be taken.
+            state (Optional[Position]): The starting position. Defaults to the current Pac-Man position.
+
+        Returns:
+            Position: The new position after taking the action.
+        """
+        state = self.pacman_position
+        delta = self.directions.get(action, (0, 0))
+        
+        new_x = state.x + delta[0]
+        new_y = state.y + delta[1]
+        new_position = Position(new_x, new_y)
+
+        return new_position
+
+    def get_legal_actions(self) -> List[ActionSpaceEnum]:
+        """
+        Determines the list of legal actions that can be taken from a given state.
+
+        An action is considered legal if the resulting position is not occupied by a wall, pellet.
+        If no `state` is provided, the current position of Pac-Man is used as the starting point.
+
+        Args:
+            state (Optional[Position]): The starting position. Defaults to the current Pac-Man position.
+
+        Returns:
+            List[ActionSpaceEnum]: A list of legal actions from the given state.
+        """
+
+        legal_actions: List[ActionSpaceEnum] = []
+        for action in self.directions.keys():
+            next_state = self._state_after_action(action)
+            if next_state in self.walls:
+                continue
+            legal_actions.append(action)
+        return legal_actions
+
+
+class MapFullHash(Map):
+    def __hash__(self):
+        return hash((frozenset(self.pellets), self.pacman_position))
+
 
 @dataclass
 class Observation:

@@ -1,6 +1,6 @@
 import random
-from src.controller import Controller, ActionSpaceEnum
-from src.state import Observation
+from src.controller import Controller
+from src.state import Observation, ActionSpaceEnum
 
 
 class BasicController(Controller):
