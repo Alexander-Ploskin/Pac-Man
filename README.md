@@ -26,13 +26,9 @@ The project demonstrates the power of RL techniques by providing a modular frame
    ```bash
    python cli.py random
    ```
-   To run Q-learning algorithm (full_hash means that states == full map's objects positions):
+   To run Q-learning algorithm (full_hash means that states == full map's objects positions, states == position of packman otherwise):
    ```bash
    python cli.py qlearn --full_hash
-   ```
-   To run Q-learning algorithm with states == position of packman:
-   ```bash
-   python main.py qlearn
    ```
 
 ---
