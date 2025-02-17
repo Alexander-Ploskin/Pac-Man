@@ -61,7 +61,7 @@ The `ValueIterationAgent` implements the Value Iteration algorithm, a model-base
 Value Iteration computes the optimal value function V*(s) for each state by iteratively applying the Bellman optimality equation:
 
 $$
-V_{k+1}(s) = \max_a(R(s,a) + \gamma \sum_{s'} P(s'|s,a)V_k(s'))
+V_{k+1}(s) = \max_a(R(s,a) + \gamma \cdot V_k(s'))
 $$
 
 Where:
