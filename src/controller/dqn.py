@@ -1,3 +1,7 @@
+# to-do
+# add learning rate scheduler
+
+
 import random
 import numpy as np
 from collections import deque
@@ -15,7 +19,7 @@ from src.environment import PacmanEnvironment
 
 def map_to_state_vector(map_object: Map) -> torch.Tensor:
     """
-    Converts a Map object to a state tensor representing the grid.
+    Converts a Map object to a state tensor (vector) representing the grid.
 
     Each position in the grid is encoded as follows:
     - 0: Empty
@@ -53,7 +57,46 @@ def map_to_state_vector(map_object: Map) -> torch.Tensor:
     return torch.tensor(state, dtype=torch.float32)
 
 
-class QNetwork(nn.Module):
+def map_to_state_matrix(map_object: Map) -> torch.Tensor:
+    """
+    Converts a Map object to a state tensor (matrix) representing the grid.
+
+    Each position in the grid is encoded as follows:
+    - 0: Empty
+    - 1: Pac-Man
+    - 2: Pellet
+    - -1: Wall
+
+    Args:
+        map_object (Map): The Map object.
+
+    Returns:
+        torch.Tensor: A tensor representing the grid state.
+    """
+
+    x_coords = [pos.x for pos in map_object.walls]
+    y_coords = [pos.y for pos in map_object.walls]
+
+    x_min, x_max = min(x_coords), max(x_coords)
+    y_min, y_max = min(y_coords), max(y_coords)
+
+    state = torch.zeros((x_max - x_min + 1, y_max - y_min + 1), dtype=torch.float32)
+
+    for x in range(x_min, x_max + 1):
+        for y in range(y_min, y_max + 1):
+            position = Position(x, y)
+            
+            if position == map_object.pacman_position:
+                state[x - x_min, y - y_min] = 1.0
+            elif position in map_object.pellets:
+                state[x - x_min, y - y_min] = 2.0
+            elif position in map_object.walls:
+                state[x - x_min, y - y_min] = -1.0
+
+    return state
+
+
+class QNetworkDense(nn.Module):
     """
     A neural network for estimating Q-values of state-action pairs.
     """
@@ -67,7 +110,7 @@ class QNetwork(nn.Module):
             action_size (int): The size of the action space.
             hidden_size (int): The number of units in the hidden layer.
         """
-        super(QNetwork, self).__init__()
+        super(QNetworkDense, self).__init__()
         self.fc1 = nn.Linear(state_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, action_size)
@@ -78,13 +121,34 @@ class QNetwork(nn.Module):
         return self.fc3(x)
 
 
+class QNetworkConv(nn.Module):
+    """
+    A neural network for estimating Q-values of state-action pairs.
+    """
+
+    def __init__(self, state_size, action_size, hidden_size=128):
+        """
+        Initializes the Q-Network.
+
+        Args:
+            state_size (int): The size of the state space.
+            action_size (int): The size of the action space.
+            hidden_size (int): The number of units in the hidden layer.
+        """
+        super(QNetworkDense, self).__init__()
+        pass
+
+    def forward(self, state):
+        pass
+
+
 class DQN(Controller):
     """
     Deep Q-Network agent.
     """
 
-    def __init__(self, state_size, action_size, alpha=0.001, gamma=0.98,
-                 train_epsilon=0.9, test_epsilon=0.2,
+    def __init__(self, state_size, action_size, nn_type='dense', alpha=0.001, 
+                 gamma=0.98, train_epsilon=0.9, test_epsilon=0.2,
                  epsilon_decay=0.99997, replay_buffer_size=10000,
                  batch_size=64, target_update_interval=1000,
                  numTraining=100000, verbose=False, device="cpu"):
@@ -94,10 +158,11 @@ class DQN(Controller):
         Args:
             state_size (int): The size of the state space.
             action_size (int): The size of the action space.
+            nn_type (str): type of the network to use.
             alpha (float): Learning rate.
             gamma (float): Discount factor.
-            train_epsilon (float): Exploration rate during training.
             test_epsilon (float): Exploration rate during testing.
+            epsilon (float): Exploration rate during training.
             epsilon_decay (float): Decay rate for epsilon.
             replay_buffer_size (int): Size of the replay buffer.
             batch_size (int): Batch size for training.
@@ -108,7 +173,6 @@ class DQN(Controller):
         self.action_size = action_size
         self.alpha = alpha
         self.gamma = gamma
-        self.train_epsilon = train_epsilon
         self.test_epsilon = test_epsilon
         self.epsilon = train_epsilon
         self.epsilon_decay = epsilon_decay
@@ -120,10 +184,23 @@ class DQN(Controller):
         self.device = device
 
         # Q-Network and Target Network
-        self.q_network = QNetwork(state_size, action_size).to(self.device)
-        self.target_network = QNetwork(state_size, action_size).to(self.device)
+        self.nn_type = nn_type
+        if self.nn_type == 'dense':
+            self.state_converter = map_to_state_vector
+            self.q_network = QNetworkDense(state_size, action_size)
+            self.target_network = QNetworkDense(state_size, action_size)
+        if self.nn_type == 'conv':
+            self.state_converter = map_to_state_matrix
+            self.q_network = QNetworkConv(state_size, action_size)
+            self.target_network = QNetworkConv(state_size, action_size)
+        self.q_network = self.q_network.to(self.device)
+        self.target_network = self.target_network.to(self.device)
+
         self.target_network.load_state_dict(self.q_network.state_dict())  # Initialize target network with Q-network weights
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.alpha)
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * 200 // self.target_update_interval)  # 200 is from maximum number of samples in environment
+
+        self.loss = nn.MSELoss()
 
         # Replay Buffer
         self.replay_buffer = deque(maxlen=self.replay_buffer_size)
@@ -134,41 +211,6 @@ class DQN(Controller):
         self.lastState: Map | None = None
         self.train_ = True
         self.step_count = 0
-
-    def state_to_tensor(self, state: Map) -> torch.Tensor:
-        """
-        Converts the state (Map) to a tensor that can be used as input to the neural network.
-
-        Args:
-            state (Map): The current state of Pac-Man's environment.
-
-        Returns:
-            torch.Tensor: The tensor representation of the state.
-        """
-        # Extract relevant features from the state
-        pacman_position = state.pacman_position
-        ghost_positions = state.ghost_positions
-        food_positions = state.food_positions
-        walls = state.walls
-
-        # Convert features to numpy arrays
-        pacman_position = np.array(pacman_position)
-        ghost_positions = np.array(ghost_positions)
-        food_positions = np.array(food_positions)
-        walls = np.array(walls)
-
-        # Flatten the arrays
-        pacman_position = pacman_position.flatten()
-        ghost_positions = ghost_positions.flatten()
-        food_positions = food_positions.flatten()
-        walls = walls.flatten()
-
-        # Concatenate the features into a single array
-        state_array = np.concatenate([pacman_position, ghost_positions, food_positions, walls])
-
-        # Convert the numpy array to a PyTorch tensor
-        state_tensor = torch.tensor(state_array, dtype=torch.float).to(self.device)
-        return state_tensor
 
     def getQValue(self, state: torch.Tensor, action: int) -> float:
         """
@@ -195,23 +237,16 @@ class DQN(Controller):
         Returns:
             ActionSpaceEnum | None: The best action to take; returns None if no legal actions are available.
         """
-        legal_actions = state.get_legal_actions()
-        if not legal_actions:
-            return None
-
+        actions = list(Map.directions.keys())
         if ((self.train_ and random.random() < self.epsilon) or
                 (not self.train_ and random.random() < self.test_epsilon)):
-            return random.choice(legal_actions)
+            return random.choice(actions)
 
-        state_tensor = map_to_state_vector(state)
+        state_tensor = self.state_converter(state)
         with torch.no_grad():
             q_values = self.q_network(state_tensor)
-            # Convert ActionSpaceEnum to integer indices
-            legal_action_indices = [action.value for action in legal_actions]  # Assuming ActionSpaceEnum has integer values
-            # Filter Q-values to only include legal actions
-            legal_q_values = q_values[legal_action_indices]
-            best_action_index = torch.argmax(legal_q_values).item()
-            best_action = legal_actions[best_action_index]
+            best_action_index = torch.argmax(q_values).item()
+            best_action = actions[best_action_index]
         return best_action
 
     def remember(self, state: Map, action: ActionSpaceEnum, reward: float, next_state: Map, done: bool):
@@ -227,7 +262,7 @@ class DQN(Controller):
         """
         self.replay_buffer.append((state, action, reward, next_state, done))
 
-    def learn(self):
+    def learning_step(self):
         """
         Samples a minibatch from the replay buffer and performs a learning step.
         """
@@ -240,22 +275,30 @@ class DQN(Controller):
         # Convert the minibatch to tensors
         states, actions, rewards, next_states, dones = zip(*minibatch)
 
-        state_tensors = torch.stack([map_to_state_vector(state) for state in states]).to(self.device)
-        action_tensors = torch.tensor([action.value for action in actions], dtype=torch.int64).to(self.device)  # Assuming ActionSpaceEnum has integer values
+        state_tensors = torch.stack([self.state_converter(state) for state in states]).to(self.device)
+        action_tensors = torch.tensor([Map.keys().index(action) for action in actions], dtype=torch.int64).to(self.device)
         reward_tensors = torch.tensor(rewards, dtype=torch.float).to(self.device)
         next_state_tensors = torch.stack([map_to_state_vector(next_state) for next_state in next_states]).to(self.device)
         done_tensors = torch.tensor(dones, dtype=torch.bool).to(self.device)
 
+        ### CHECK THE DIMS!!!!! ###
+        ### CHECK THE DIMS!!!!! ###
+
         # Compute Q(s, a) and Q(s', a')
-        q_values = self.q_network(state_tensors).gather(1, action_tensors.unsqueeze(1)).squeeze()
-        next_q_values = self.target_network(next_state_tensors).max(1)[0]
+        outputs = self.q_network(state_tensors)
+        q_values = outputs[torch.arange(outputs.size(0)), action_tensors]
+        # q_values = self.q_network(state_tensors).gather(1, action_tensors.unsqueeze(1)).squeeze()
+        next_q_values = torch.max(self.target_network(next_state_tensors), dim=-1)
         next_q_values[done_tensors] = 0.0  # Zero out terminal states
+
+        ### CHECK THE DIMS!!!!! ###
+        ### CHECK THE DIMS!!!!! ###
 
         # Compute the expected Q values
         expected_q_values = reward_tensors + self.gamma * next_q_values
 
         # Compute the loss
-        loss = nn.MSELoss()(q_values, expected_q_values)
+        loss = self.loss(q_values, expected_q_values)
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -266,6 +309,7 @@ class DQN(Controller):
         self.step_count += 1
         if self.step_count % self.target_update_interval == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())
+            self.scheduler.step()
 
     def run_episode(self, env: PacmanEnvironment) -> int:
         """
@@ -283,15 +327,13 @@ class DQN(Controller):
 
         while not observation.done:
             action = self.best_action(observation.map)
-            if action is None:
-                break
             next_observation = env.step(action)
             reward = next_observation.reward
             next_state = next_observation.map
             done = next_observation.done
 
             self.remember(self.lastState, action, reward, next_state, done)
-            self.learn()
+            self.learning_step()
 
             self.lastState = next_state
             self.lastAction = action
@@ -301,7 +343,7 @@ class DQN(Controller):
         self.episodesPassed += 1
         if self.train_:
              self.epsilon = max(self.test_epsilon, self.epsilon * self.epsilon_decay)
-        return observation.score
+        return total_reward, observation.score
 
     def train(self, env: PacmanEnvironment) -> None:
         """
@@ -313,13 +355,15 @@ class DQN(Controller):
         self.episodesPassed = 0
         self.train_ = True
         mean_score = 0.0
+        mean_reward = 0.0
 
         pbar = tqdm(range(self.numTraining), total=self.numTraining)
         for i in pbar:
-            score = self.run_episode(env)
+            total_reward, score = self.run_episode(env)
             mean_score += score
+            mean_reward += total_reward
             if (i + 1) % 100 == 0:
-                pbar.set_description(f"Mean score on last 100 episodes: {mean_score / 100:.0f}, Epsilon: {self.epsilon:.4f}")
+                pbar.set_description(f"Mean score on last 100 episodes: {mean_score / 100:.0f}, Mean reward on last 100 episodes: {mean_reward / 100:.0f}, Epsilon: {self.epsilon:.4f}")
                 mean_score = 0
 
         self.lastAction = None
