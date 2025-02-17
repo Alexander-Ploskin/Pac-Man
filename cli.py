@@ -1,5 +1,5 @@
 import click
-from src.pacman_runner import run_game
+from src.pacman_runner import run_game, print_metrics
 
 @click.group()
 def cli():
@@ -11,11 +11,15 @@ def cli():
 @cli.command()
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
 @click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
-def random(environment, grid_size):
+@click.option('--eval', is_flag=True, help="Evaluate algorithm. Can be used with --model_path")
+def random(environment, eval):
     """
     Runs the game with a random controller.
     """
-    run_game(environment, grid_size, 'random')
+    if eval:
+        print_metrics(environment, 'random')
+    else:
+        run_game(environment, 'random')
 
 @cli.command()
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
@@ -28,16 +32,23 @@ def random(environment, grid_size):
 @click.option('--numTraining', type=int, default=100000, help='number of training episodes')
 @click.option('--verbose', is_flag=True, help='Print Q-value, reward and position for debug on each test action')
 @click.option('--model_path', type=str, default=None, help='Path to load/save the Q-learning model.')
-@click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
-def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose, model_path, grid_size):
+@click.option('--eval', is_flag=True, help="Evaluate algorithm. Can be used with --model_path")
+def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose, model_path, eval):
     """
     Runs the game with a Q-learning controller.
     """
-    run_game(environment, 'qlearn', grid_size, full_hash=full_hash,
-             alpha=alpha, train_epsilon=train_epsilon,
-             test_epsilon=test_epsilon, gamma=gamma,
-             gamma_eps=gamma_eps, numTraining=numtraining,
-             verbose=verbose, model_path=model_path)
+    if eval:
+        print_metrics(environment, 'qlearn', full_hash=full_hash,
+                    alpha=alpha, train_epsilon=train_epsilon,
+                    test_epsilon=test_epsilon, gamma=gamma,
+                    gamma_eps=gamma_eps, numTraining=numtraining,
+                    verbose=verbose, model_path=model_path)
+    else:
+        run_game(environment, 'qlearn', full_hash=full_hash,
+                alpha=alpha, train_epsilon=train_epsilon,
+                test_epsilon=test_epsilon, gamma=gamma,
+                gamma_eps=gamma_eps, numTraining=numtraining,
+                verbose=verbose, model_path=model_path)
 
 @cli.command()
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')

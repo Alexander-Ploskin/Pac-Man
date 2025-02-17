@@ -4,6 +4,8 @@ from uuid import uuid4
 from src.environment import BasicPacmanEnvironment
 from src.drawer import PygameDrawer
 from src.controller import BasicController, QLearnAgent, ValueIterationAgent
+from src.evaluation import evaluate_algorithm
+
 
 def run_algorithm(environment, drawer, controller):
     """
@@ -155,3 +157,20 @@ def run_game(environment_name, controller_type, grid_size=10, model_path=None, f
         raise ValueError(f"Invalid controller type: {controller_type}")
 
     run_algorithm(environment, drawer, controller)
+
+
+def print_metrics(environment_name, controller_type, model_path=None, full_hash=True, num_episodes=1000, **params):
+    """
+    Evaluate controller on environment with num_episodes runs.
+    """
+    environment = create_environment(environment_name, full_hash=full_hash)
+
+    if controller_type == 'random':
+        controller = create_random_controller()
+    elif controller_type == 'qlearn':
+        controller = create_qlearn_controller(environment, model_path, **params)
+    else:
+        raise ValueError(f"Invalid controller type: {controller_type}")
+    
+    metrics = evaluate_algorithm(environment, controller, num_episodes)
+    print(f"Environment: {environment_name}", f"Controller: {controller_type}", f"Metrics: {metrics}")
