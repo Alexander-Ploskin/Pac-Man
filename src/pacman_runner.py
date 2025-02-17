@@ -106,9 +106,11 @@ def create_qlearn_controller(environment, model_path, **params):
     else:
         print("Training QLearnAgent from scratch...")
         controller.train(environment)
-        model_path = f'{uuid4()}.pkl'
-        print(f"Saving best model to {model_path}")
-        controller.save_model(model_path)
+        if model_path is not None:
+            if not model_path:
+                model_path = f'{uuid4()}.pkl'
+            print(f"Saving best model to {model_path}")
+            controller.save_model(model_path)
     return controller
 
 

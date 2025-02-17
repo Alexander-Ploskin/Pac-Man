@@ -119,9 +119,9 @@ class BasicPacmanEnvironment(PacmanEnvironment):
 
         # Mapping for actions to directional moves: up, right, down, left.
         directions = {
-            ActionSpaceEnum.UP: (0, 1),
+            ActionSpaceEnum.UP: (0, -1),
             ActionSpaceEnum.RIGHT: (1, 0),
-            ActionSpaceEnum.DOWN: (0, -1),
+            ActionSpaceEnum.DOWN: (0, 1),
             ActionSpaceEnum.LEFT: (-1, 0)
         }
         delta = directions.get(action, (0, 0))
@@ -171,7 +171,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         Returns:
             - reward (float): The reward to be applied.
         """
-        reward = -4  # default step cost
+        reward = -1  # default step cost
 
         # Check if candidate hits a wall.
         if candidate in map_instance.walls:

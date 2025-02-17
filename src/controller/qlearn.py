@@ -213,7 +213,7 @@ class QLearnAgent(Controller):
             if (i + 1) % 100 == 0:
                 pbar.set_description(f"Mean score on last 100 eposodes: {mean_score / 100:.0f}, Train epsilon: {self.train_epsilon}")
                 mean_score = 0
-        
+
         self.lastAction = None
         self.lastState = None
 
@@ -233,10 +233,12 @@ class QLearnAgent(Controller):
 
         action = self.best_action(observation.map)
         if self.lastState is not None and self.lastAction is not None:
-            qmax = self.getMaxQ(observation.map)
-            self.updateQ(self.lastState, self.lastAction, observation.reward, qmax)
+            # qmax = self.getMaxQ(observation.map)
+            # self.updateQ(self.lastState, self.lastAction, observation.reward, qmax)
             if self.verbose:
                 print(observation.reward)
+                for tmp_action in Map.directions.keys():
+                    print(f"Around Q-value:", self.getQValue(self.lastState, tmp_action))
                 print(f"Q-value:", self.getQValue(self.lastState, self.lastAction))
                 print("Position:", self.lastState.pacman_position, self.lastAction)
                 print("Hash:", hash((self.lastState, self.lastAction)))
