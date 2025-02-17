@@ -25,8 +25,11 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         self.cell_size = cell_size
         self.max_steps = max_steps
         self.full_hash = full_hash
+        
+    def get_grid_size(self):
+        return self.grid_size
 
-    def reset(self) -> Observation:
+    def reset(self, inner_walls: bool = True) -> Observation:
         """
         Reset the environment to its initial configuration.
 
@@ -43,8 +46,9 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             walls.add(Position(i, self.grid_size - 1))
         
         # Add internal walls (an example pattern)
-        for r in range(2, self.grid_size - 2, 2):
-            walls.add(Position(r, self.grid_size // 2))
+        if inner_walls:
+            for r in range(2, self.grid_size - 2, 2):
+                walls.add(Position(r, self.grid_size // 2))
         
         # Populate the grid with pellets where there are no walls
         pellets = set()
@@ -126,20 +130,18 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         new_x = current_position.x + delta[0]
         new_y = current_position.y + delta[1]
         new_position = Position(new_x, new_y)
-
-        reward = -4  # Default step cost
         
-        # Check if new position is a wall; if so, apply a collision penalty.
+        reward = self.compute_reward(self.map, current_position, new_position)
+
+        # Check if new position is a wall.
         if new_position in self.map.walls:
-            reward = -50
             new_position = current_position  # Remain in the same position.
         else:
             # Move Pac-Man to the new position.
             self.map.pacman_position = new_position
-            # If a pellet is present, remove it and update reward and score.
+            # If a pellet is present, remove it.
             if new_position in self.map.pellets:
                 self.map.pellets.remove(new_position)
-                reward += 10
                 self.score += 10
 
         self.step_count += 1
@@ -155,3 +157,28 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             step_count=self.step_count,
             map=self.map
         )
+
+    @staticmethod
+    def compute_reward(map_instance: Map, current: Position, candidate: Position) -> float:
+        """
+        Computes the reward for moving from the current position to a candidate new position.
+
+        Args:
+            map_instance (Map): The current map, including walls and pellets.
+            current (Position): Pac-Man's current position.
+            candidate (Position): The candidate new position based on the action.
+
+        Returns:
+            - reward (float): The reward to be applied.
+        """
+        reward = -4  # default step cost
+
+        # Check if candidate hits a wall.
+        if candidate in map_instance.walls:
+            reward = -50
+        else:
+            # If there is a pellet at the candidate position, add reward but do not remove it here.
+            if candidate in map_instance.pellets:
+                reward += 10
+
+        return reward
