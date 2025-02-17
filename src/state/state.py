@@ -60,9 +60,9 @@ class Map:
     pacman_position: Position
 
     directions = {
-        ActionSpaceEnum.UP: (0, 1),
+        ActionSpaceEnum.UP: (0, -1),
         ActionSpaceEnum.RIGHT: (1, 0),
-        ActionSpaceEnum.DOWN: (0, -1),
+        ActionSpaceEnum.DOWN: (0, 1),
         ActionSpaceEnum.LEFT: (-1, 0)
     }
 

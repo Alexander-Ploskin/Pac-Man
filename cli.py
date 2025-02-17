@@ -17,9 +17,9 @@ def random(environment, grid_size, eval):
     Runs the game with a random controller.
     """
     if eval:
-        print_metrics(environment, 'random')
+        print_metrics(environment, 'random', grid_size=grid_size)
     else:
-        run_game(environment, 'random')
+        run_game(environment, 'random', grid_size=grid_size)
 
 @cli.command()
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
@@ -32,8 +32,9 @@ def random(environment, grid_size, eval):
 @click.option('--numTraining', type=int, default=100000, help='number of training episodes')
 @click.option('--verbose', is_flag=True, help='Print Q-value, reward and position for debug on each test action')
 @click.option('--model_path', type=str, default=None, help='Path to load/save the Q-learning model.')
+@click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
 @click.option('--eval', is_flag=True, help="Evaluate algorithm. Can be used with --model_path")
-def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose, model_path, eval):
+def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose, model_path, grid_size, eval):
     """
     Runs the game with a Q-learning controller.
     """
@@ -42,13 +43,15 @@ def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, ga
                     alpha=alpha, train_epsilon=train_epsilon,
                     test_epsilon=test_epsilon, gamma=gamma,
                     gamma_eps=gamma_eps, numTraining=numtraining,
-                    verbose=verbose, model_path=model_path)
+                    verbose=verbose, model_path=model_path,
+                    grid_size=grid_size)
     else:
         run_game(environment, 'qlearn', full_hash=full_hash,
                 alpha=alpha, train_epsilon=train_epsilon,
                 test_epsilon=test_epsilon, gamma=gamma,
                 gamma_eps=gamma_eps, numTraining=numtraining,
-                verbose=verbose, model_path=model_path)
+                verbose=verbose, model_path=model_path,
+                grid_size=grid_size)
 
 @cli.command()
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
