@@ -11,6 +11,20 @@ The project demonstrates the power of RL techniques by providing a modular frame
 
 ---
 
+## MDP Problem Definition
+
+To apply reinforcement learning, we model the Pac-Man game as a Markov Decision Process (MDP). The key elements of our MDP are defined as follows:
+
+*   **States:** A state `s` is defined by the Pac-Man's current position and the remaining pellets' positions on the grid.
+*   **Actions:** Pac-Man can take one of four actions: `Up`, `Down`, `Left`, or `Right`, corresponding to movements in those directions.
+*   **Rewards:**
+    *   **\+10 Reward:** Eating a pellet grants a reward of +1.
+    *   **-1 Reward:** Each move costs a small penalty of -0.1 to encourage Pac-Man to find the shortest path to pellets and finish the game faster.
+    *   **-50 Reward:** Crashing into a wall yields reward of -1.
+*   **Transition Model:** The transition model `P(s'|s, a)` defines the probability of transitioning to state `s'` after taking action `a` in state `s`. In our simplified environment, the transitions are deterministic (unless an action would cause Pac-Man to run into a wall, in which case it stays in place).
+
+---
+
 ## 1. Build and Run
 
 1. Clone this repository:
