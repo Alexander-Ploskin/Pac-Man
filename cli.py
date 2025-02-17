@@ -33,7 +33,7 @@ def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, ga
     """
     Runs the game with a Q-learning controller.
     """
-    run_game(environment, grid_size, 'qlearn', full_hash=full_hash,
+    run_game(environment, 'qlearn', grid_size, full_hash=full_hash,
              alpha=alpha, train_epsilon=train_epsilon,
              test_epsilon=test_epsilon, gamma=gamma,
              gamma_eps=gamma_eps, numTraining=numtraining,
@@ -44,7 +44,7 @@ def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, ga
 @click.option('--full_hash', is_flag=True, help='Use full hashable maps for states or not.')
 @click.option('--gamma', type=float, default=0.98, help='discount factor')
 @click.option('--theta', type=float, default=1e-6, help='convergence threshold')
-@click.option('--numTraining', type=int, default=100000, help='number of training episodes')
+@click.option('--numTraining', type=int, default=20, help='number of training episodes')
 @click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
 def value_iteration(environment, full_hash, gamma, theta, numtraining, grid_size):
     """
@@ -52,8 +52,8 @@ def value_iteration(environment, full_hash, gamma, theta, numtraining, grid_size
     """
     run_game(
         environment,
-        grid_size,
         'value_iteration',
+        grid_size,
         full_hash=full_hash,
         gamma=gamma,
         theta=theta,

@@ -133,7 +133,7 @@ def create_value_iteration_controller(environment, model_path, **params):
     return controller
 
 
-def run_game(environment_name, grid_size, controller_type, model_path=None, full_hash=True, **params):
+def run_game(environment_name, controller_type, grid_size=10, model_path=None, full_hash=True, **params):
     """
     Runs the Pac-Man game with the specified environment and controller type.
 
