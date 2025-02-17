@@ -31,6 +31,14 @@ The project demonstrates the power of RL techniques by providing a modular frame
    python cli.py qlearn --full_hash
    ```
 
+4. To load a previously trained model:
+   ```bash
+   python cli.py qlearn --model_path checkpoints/qlearn/e8afe3cc-573e-4034-8384-97e0e7fe66dc.pkl
+   ```
+
+Note: When using --model_path:
+- If the file exists, the model will be loaded from it
+- If the flag is omitted or path doesn't exist, the model will be trained from scratch without saving
 ---
 
 ## 2. Demonstration

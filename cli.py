@@ -26,7 +26,8 @@ def random(environment):
 @click.option('--gamma_eps', type=float, default=0.99997, help='gamma factor for epsilon in training')
 @click.option('--numTraining', type=int, default=100000, help='number of training episodes')
 @click.option('--verbose', is_flag=True, help='Print Q-value, reward and position for debug on each test action')
-def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose):
+@click.option('--model_path', type=str, default=None, help='Path to load/save the Q-learning model.')
+def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose, model_path):
     """
     Runs the game with a Q-learning controller.
     """
@@ -34,7 +35,7 @@ def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, ga
              alpha=alpha, train_epsilon=train_epsilon,
              test_epsilon=test_epsilon, gamma=gamma,
              gamma_eps=gamma_eps, numTraining=numtraining,
-             verbose=verbose)
+             verbose=verbose, model_path=model_path)
 
 
 if __name__ == '__main__':

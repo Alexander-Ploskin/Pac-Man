@@ -1,4 +1,6 @@
 import pygame
+import os
+from uuid import uuid4
 from src.environment import BasicPacmanEnvironment
 from src.drawer import PygameDrawer
 from src.controller import BasicController, QLearnAgent
@@ -85,7 +87,7 @@ def create_random_controller():
     return BasicController()
 
 
-def create_qlearn_controller(environment, **params):
+def create_qlearn_controller(environment, model_path, **params):
     """
     Creates and trains an instance of a Q-learning controller.
 
@@ -96,11 +98,19 @@ def create_qlearn_controller(environment, **params):
         QLearnAgent: Instance of the controller.
     """
     controller = QLearnAgent(**params)
-    controller.train(environment)
+    if model_path is not None and os.path.exists(model_path):
+        print(f"Loading model from {model_path}...")
+        controller.load_model(model_path)
+    else:
+        print("Training QLearnAgent from scratch...")
+        controller.train(environment)
+        model_path = f'{uuid4()}.pkl'
+        print(f"Saving best model to {model_path}")
+        controller.save_model(model_path)
     return controller
 
 
-def run_game(environment_name, controller_type, full_hash=True, **params):
+def run_game(environment_name, controller_type, model_path=None, full_hash=True, **params):
     """
     Runs the Pac-Man game with the specified environment and controller type.
 
@@ -115,7 +125,7 @@ def run_game(environment_name, controller_type, full_hash=True, **params):
     if controller_type == 'random':
         controller = create_random_controller()
     elif controller_type == 'qlearn':
-        controller = create_qlearn_controller(environment, **params)
+        controller = create_qlearn_controller(environment, model_path, **params)
     else:
         raise ValueError(f"Invalid controller type: {controller_type}")
 

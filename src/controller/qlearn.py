@@ -1,5 +1,6 @@
 import random
 from collections import defaultdict
+import pickle
 
 from tqdm import tqdm
 
@@ -10,8 +11,7 @@ from src.environment import PacmanEnvironment
 
 class QTable(defaultdict):
     """
-    A table for storing Q-values for state-action pairs.
-
+    A table for storing Q-values for state-action pairs with serialization capabilities.
     Inherits from defaultdict, initializing with a default float value of 0.0 for new keys.
     """
 
@@ -20,6 +20,33 @@ class QTable(defaultdict):
         Initializes the QTable with a default float value for new entries.
         """
         super().__init__(float)
+
+    def save(self, file_path: str) -> None:
+        """
+        Saves the Q-table to a file using pickle.
+        
+        Args:
+            file_path (str): Path where to save the Q-table
+        """
+        with open(file_path, "wb") as f:
+            pickle.dump(dict(self), f)
+
+    @classmethod
+    def load(cls, file_path: str) -> 'QTable':
+        """
+        Loads the Q-table from a file using pickle.
+        
+        Args:
+            file_path (str): Path from where to load the Q-table
+            
+        Returns:
+            QTable: New instance of QTable with loaded values
+        """
+        table = cls()
+        with open(file_path, "rb") as f:
+            loaded_dict = pickle.load(f)
+            table.update(loaded_dict)
+        return table
 
 
 class QLearnAgent(Controller):
@@ -218,3 +245,21 @@ class QLearnAgent(Controller):
         self.lastAction = action
 
         return action
+
+    def save_model(self, file_path: str) -> None:
+        """
+        Save the Q-table to a file.
+        
+        Args:
+            file_path (str): Path where to save the model
+        """
+        self.q_value.save(file_path)
+
+    def load_model(self, file_path: str) -> None:
+        """
+        Load the Q-table from a file.
+        
+        Args:
+            file_path (str): Path from where to load the model
+        """
+        self.q_value = QTable.load(file_path)
