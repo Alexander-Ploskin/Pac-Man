@@ -41,7 +41,7 @@ def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, ga
 
 @cli.command()
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
-@click.option('--full_hash', is_flag=True, help='Use full hashable maps for states or not.')
+@click.option('--full_hash', default=True, is_flag=True, help='Use full hashable maps for states or not.')
 @click.option('--gamma', type=float, default=0.98, help='discount factor')
 @click.option('--theta', type=float, default=1e-6, help='convergence threshold')
 @click.option('--numTraining', type=int, default=20, help='number of training episodes')

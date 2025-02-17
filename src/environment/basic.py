@@ -59,7 +59,6 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         
         # Place Pac-Man at the grid center and remove any pellet at that position
         pacman_position = Position(self.grid_size // 2, self.grid_size // 2)
-        pacman_position = Position(1, 1)
         if pacman_position in pellets:
             pellets.remove(pacman_position)
         

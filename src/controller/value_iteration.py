@@ -106,7 +106,7 @@ class ValueIterationAgent(Controller):
 
     
     def get_training_states(self, env: PacmanEnvironment) -> Iterator[Map]:
-        default_map = env.reset(inner_walls=False).map
+        default_map = env.reset().map
         walls = default_map.walls
         grid_size = env.get_grid_size()
         valid_positions = []
@@ -165,7 +165,7 @@ class ValueIterationAgent(Controller):
         Args:
             file_path (str): Path where to save the model
         """
-        file_path = os.path.join('checkpoints', 'qlearn', file_path)
+        file_path = os.path.join('checkpoints', 'value_iteration', file_path)
         self.values.save(file_path)
 
     def load_model(self, file_path: str) -> None:
