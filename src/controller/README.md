@@ -113,20 +113,6 @@ In Cross Entropy method we:
 - Train policy model on pairs (state, action) from these elite actions
 - Repeat until convergence
 
-### parameters for experiment
-Common parameters:
-
-- alpha = 0.3
-- train_epsilon = 0.9
-- test_epsilon = 0.2
-- gamma = 0.98
-- gamma_eps = 0.99997
-
-#### For full-hash
-- numTraining = 100000
-
-#### For pacman position hash
-- numTraining = 10000
 
 ## Experiments
 
