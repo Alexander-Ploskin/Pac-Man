@@ -142,6 +142,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             # If a pellet is present, remove it.
             if new_position in self.map.pellets:
                 self.map.pellets.remove(new_position)
+                self.score += 10
 
         self.step_count += 1
         

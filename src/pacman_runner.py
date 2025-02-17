@@ -159,11 +159,11 @@ def run_game(environment_name, controller_type, grid_size=10, model_path=None, f
     run_algorithm(environment, drawer, controller)
 
 
-def print_metrics(environment_name, controller_type, model_path=None, full_hash=True, num_episodes=1000, **params):
+def print_metrics(environment_name, controller_type, grid_size=10, model_path=None, full_hash=True, num_episodes=1000, **params):
     """
     Evaluate controller on environment with num_episodes runs.
     """
-    environment = create_environment(environment_name, full_hash=full_hash)
+    environment = create_environment(environment_name, grid_size=grid_size, full_hash=full_hash)
 
     if controller_type == 'random':
         controller = create_random_controller()

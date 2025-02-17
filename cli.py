@@ -12,7 +12,7 @@ def cli():
 @click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
 @click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
 @click.option('--eval', is_flag=True, help="Evaluate algorithm. Can be used with --model_path")
-def random(environment, eval):
+def random(environment, grid_size, eval):
     """
     Runs the game with a random controller.
     """
