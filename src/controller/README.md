@@ -49,8 +49,6 @@ $$
 \epsilon_{t+1} = \epsilon_{t} * \gamma_{\epsilon}
 $$
 
-I'll add a section about the Value Iteration controller to the README, maintaining the same style and format as the existing content. Here's the addition:
-
 ### 3. Value Iteration Controller (`value_iteration.py`)
 
 #### Description
@@ -104,6 +102,17 @@ To address this limitation, two potential approaches are proposed:
 
 Due to these computational constraints, Value Iteration is currently implemented and tested only on 6×6 grids, and comparative experiments are not included in the results table.
 
+### 4. Cross Entropy
+
+#### Description
+
+In Cross Entropy method we:
+
+- Generate N sessions
+- Select M elite sessions with the highest reward
+- Train policy model on pairs (state, action) from these elite actions
+- Repeat until convergence
+
 ### parameters for experiment
 Common parameters:
 
@@ -119,11 +128,10 @@ Common parameters:
 #### For pacman position hash
 - numTraining = 10000
 
-
 ## Experiments
 
 Summary of results on `BasicPacmanEnvironment(grid_size=10, max_steps=200)` over 1000 games:
 
-| | Random | Q-learning | Q-learning(full-hash) |
-|:- | :----------- | :----------- | :--- |
-| Mean score| 403.01     | 489.11      | 553.72 |
+| | Random | Q-learning | Q-learning(full-hash) | Cross Entropy|
+|:- | :----------- | :----------- | :--- | :--- |
+| Mean score| 403.01     | 489.11      | 553.72 | 599.98
