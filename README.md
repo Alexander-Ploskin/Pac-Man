@@ -31,7 +31,7 @@ The project demonstrates the power of RL techniques by providing a modular frame
    python cli.py qlearn --full_hash
    ```
 
-4. To load a previously trained model:
+4. To load and run a previously trained model:
    ```bash
    python cli.py qlearn --model_path checkpoints/qlearn/e8afe3cc-573e-4034-8384-97e0e7fe66dc.pkl --full-hash
    ```
