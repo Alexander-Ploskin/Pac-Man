@@ -30,6 +30,10 @@ The project demonstrates the power of RL techniques by providing a modular frame
    ```bash
    python cli.py qlearn --full_hash
    ```
+   To run Value Iteration algorithm:
+   ```bash
+   python cli.py value-iteration --full_hash
+   ```
 
 4. To load a previously trained model:
    ```bash
@@ -49,6 +53,9 @@ Below is a demonstration of the project in action:
 
 ### Q-learning (SARSA update):
 ![Pac-Man Gameplay Q-learning](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/q-learning.gif)
+
+### Value Iteration
+![Pac-Man Gameplay Value Iteration](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/value_iteration.gif)
 ---
 
 ## 3. Application Architecture

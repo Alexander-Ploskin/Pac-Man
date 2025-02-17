@@ -48,6 +48,61 @@ $$
 \epsilon_{t+1} = \epsilon_{t} * \gamma_{\epsilon}
 $$
 
+I'll add a section about the Value Iteration controller to the README, maintaining the same style and format as the existing content. Here's the addition:
+
+### 3. Value Iteration Controller (`value_iteration.py`)
+
+#### Description
+
+The `ValueIterationAgent` implements the Value Iteration algorithm, a model-based dynamic programming approach to find the optimal policy. It computes the optimal value function for each state and uses it to determine the best actions.
+
+#### Core Concepts of Value Iteration
+
+Value Iteration computes the optimal value function V*(s) for each state by iteratively applying the Bellman optimality equation:
+
+$$
+V_{k+1}(s) = \max_a(R(s,a) + \gamma \sum_{s'} P(s'|s,a)V_k(s'))
+$$
+
+Where:
+- $V_k(s)$ is the value of state $s$ at iteration $k$
+- $R(s,a)$ is the immediate reward for taking action $a$ in state $s$
+- $\gamma$ is the discount factor
+- $P(s'|s,a)$ is the transition probability (in our deterministic environment, this is always 1 for the resulting state)
+
+The algorithm converges when the maximum change in values between iterations is less than a small threshold θ:
+
+$$
+\max_s |V_{k+1}(s) - V_k(s)| < \theta
+$$
+
+#### Parameters
+Common parameters for Value Iteration:
+- gamma = 0.98 (discount factor)
+- theta = 1e-6 (convergence threshold)
+- max_iterations = 1000
+
+#### Limitations and Solutions
+
+Due to the exponential growth of the state space with grid size (considering all possible pellet configurations), Value Iteration becomes computationally intractable for larger grids. For a 10×10 grid:
+- Number of valid positions ≈ $ 61$
+- Each valid position (except Pac-Man's) can have/not have a pellet
+- Total states ≈ $61 * 2^{60}$ ≈ $10^{25}$
+
+To address this limitation, two potential approaches are proposed:
+
+1. **Stochastic State Sampling**:
+   - Instead of considering all possible states, randomly sample a manageable subset
+   - Train on this reduced state space to approximate the optimal policy
+   - Suitable for getting approximate solutions on larger maps
+
+2. **Hierarchical Reinforcement Learning**:
+   - Train the agent on small subgrids (e.g., 4×4)
+   - Use the learned policy recursively on larger maps
+   - Decompose the large state space into manageable chunks
+
+Due to these computational constraints, Value Iteration is currently implemented and tested only on 6×6 grids, and comparative experiments are not included in the results table.
+
 ### parameters for experiment
 Common parameters:
 
