@@ -62,7 +62,7 @@ class QLearnAgent(Controller):
         observation = env.step(action)
     """
 
-    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.2, gamma=0.98, gamma_eps=0.99997, numTraining = 100000, verbose=False):
+    def __init__(self, alpha=0.3, train_epsilon=0.9, test_epsilon=0.2, gamma=0.98, gamma_eps=0.99997, numTraining = 100000, verbose=False, **params):
         """
         Initializes the QLearnAgent with specified parameters.
         Args:
