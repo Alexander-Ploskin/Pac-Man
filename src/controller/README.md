@@ -44,6 +44,7 @@ Where:
 Q-learning also uses **exploration rate $\epsilon$**. In every action during training algorithm with probability $\epsilon$ sample random action. That gives algorithm an opportunity to explore the Map.
 
 To make algorithm lay more on learned Q-value, exploration rate decreases with **gamma_eps** $\gamma_{\epsilon}$ (Factor to decay epsilon):
+
 $$
 \epsilon_{t+1} = \epsilon_{t} * \gamma_{\epsilon}
 $$
