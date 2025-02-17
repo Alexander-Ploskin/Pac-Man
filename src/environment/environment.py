@@ -1,30 +1,24 @@
+# src/environment/environment.py
 from abc import ABC, abstractmethod
-from src.state import Observation, ActionSpaceEnum
-
+from src.state import Observation, ActionSpaceEnum, Map, Position
 
 class PacmanEnvironment(ABC):
     """
     Abstract base class defining the interface for a Pac-Man environment.
-
-    Any concrete implementation must provide reset and step functionalities.
     """
 
     @abstractmethod
-    def reset(self) -> Observation:
-        """
-        Reset the environment to its initial state.
-        """
+    def reset(self, inner_walls: bool) -> Observation:
+        pass
+    
+    @abstractmethod
+    def get_grid_size(self) -> int:
         pass
 
     @abstractmethod
     def step(self, action: ActionSpaceEnum) -> Observation:
-        """
-        Advance the environment one step based on the provided action.
-
-        Args:
-            action (ActionSpaceEnum): The action to be executed.
-            
-        Returns:
-            Observation: The outcome of the action including reward and updated map data.
-        """
         pass
+
+    @staticmethod
+    def compute_reward(map_instance: Map, current: Position, candidate: Position) -> float:
+        raise NotImplementedError()

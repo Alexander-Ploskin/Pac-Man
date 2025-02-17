@@ -3,7 +3,7 @@ import os
 from uuid import uuid4
 from src.environment import BasicPacmanEnvironment
 from src.drawer import PygameDrawer
-from src.controller import BasicController, QLearnAgent
+from src.controller import BasicController, QLearnAgent, ValueIterationAgent
 
 def run_algorithm(environment, drawer, controller):
     """
@@ -40,7 +40,7 @@ def run_algorithm(environment, drawer, controller):
     drawer.close()
 
 
-def create_environment(environment_name, full_hash=True):
+def create_environment(environment_name, grid_size, full_hash=True):
     """
     Creates and returns an instance of the specified environment.
 
@@ -51,7 +51,7 @@ def create_environment(environment_name, full_hash=True):
         An environment instance.
     """
     if environment_name == 'basic':
-        environment = BasicPacmanEnvironment(full_hash=full_hash)
+        environment = BasicPacmanEnvironment(full_hash=full_hash, grid_size=grid_size)
     else:
         raise ValueError(f"Invalid environment name: {environment_name}")
 
@@ -110,22 +110,47 @@ def create_qlearn_controller(environment, model_path, **params):
     return controller
 
 
-def run_game(environment_name, controller_type, model_path=None, full_hash=True, **params):
+def create_value_iteration_controller(environment, model_path, **params):
+    """
+    Creates and trains an instance of a Value Iteration controller.
+
+    Args:
+        environment: Instance of the environment on which to train the controller.
+
+    Returns:
+        ValueIterationAgent: Instance of the controller.
+    """
+    controller = ValueIterationAgent(environment=environment, **params)
+    if model_path is not None and os.path.exists(model_path):
+        print(f"Loading model from {model_path}...")
+        controller.load_model(model_path)
+    else:
+        print("Training ValueIterationAgent from scratch...")
+        controller.train(environment)
+        model_path = f'{uuid4()}.pkl'
+        print(f"Saving best model to {model_path}")
+        controller.save_model(model_path)
+    return controller
+
+
+def run_game(environment_name, grid_size, controller_type, model_path=None, full_hash=True, **params):
     """
     Runs the Pac-Man game with the specified environment and controller type.
 
     Args:
         environment_name (str): Name of the environment to use ('basic').
-        controller_type (str): Type of controller to use ('random' or 'qlearn').
+        controller_type (str): Type of controller to use ('random', 'qlearn' or 'value_iteration').
         full_hash (bool): Use full hashable maps for states or not (only for qlearn with basic env).
     """
-    environment = create_environment(environment_name, full_hash=full_hash)
-    drawer = create_drawer()
+    environment = create_environment(environment_name, grid_size=grid_size, full_hash=full_hash)
+    drawer = create_drawer(grid_size=grid_size)
 
     if controller_type == 'random':
         controller = create_random_controller()
     elif controller_type == 'qlearn':
         controller = create_qlearn_controller(environment, model_path, **params)
+    elif controller_type == 'value_iteration':
+        controller = create_value_iteration_controller(environment, model_path, **params)
     else:
         raise ValueError(f"Invalid controller type: {controller_type}")
 

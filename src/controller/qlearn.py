@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 import pickle
-
+import os
 from tqdm import tqdm
 
 from src.controller import Controller
@@ -253,6 +253,7 @@ class QLearnAgent(Controller):
         Args:
             file_path (str): Path where to save the model
         """
+        file_path = os.path.join('checkpoints', 'qlearn', file_path)
         self.q_value.save(file_path)
 
     def load_model(self, file_path: str) -> None:
