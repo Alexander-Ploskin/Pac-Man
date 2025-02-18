@@ -314,9 +314,9 @@ class DQNAgent(Controller):
             self.target_network.load_state_dict(self.q_network.state_dict())
             self.scheduler.step()
         
-        # Log the loss and learning rate
-        current_lr = self.optimizer.param_groups[0]['lr']
-        self.logger.info(f"Step: {self.step_count}, Loss: {loss.item():.4f}, Learning Rate: {current_lr:.6f}")
+            # Log the loss and learning rate
+            current_lr = self.optimizer.param_groups[0]['lr']
+            self.logger.info(f"Step: {self.step_count}, Loss: {loss.item():.4f}, Learning Rate: {current_lr:.6f}")
 
     def run_episode(self, env: PacmanEnvironment) -> int:
         """
