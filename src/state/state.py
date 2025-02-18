@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Set, List, Dict
 import numpy as np
 from collections import OrderedDict
+import torch
 
 class ActionSpaceEnum(int, Enum):
     """
@@ -86,6 +87,8 @@ class Map:
         (ActionSpaceEnum.DOWN, (0, 1)),
         (ActionSpaceEnum.LEFT, (-1, 0))
     ])
+
+    state_tensor: torch.Tensor
 
 
     def __hash__(self):

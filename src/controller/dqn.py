@@ -1,6 +1,7 @@
 import random
 from collections import deque
 import logging
+import time
 
 import torch
 import torch.nn as nn
@@ -9,7 +10,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from src.controller import Controller
-from src.state import Map, Observation, ActionSpaceEnum, Position
+from src.state import Map, Observation, ActionSpaceEnum
 from src.environment import PacmanEnvironment
 
 
@@ -32,28 +33,7 @@ def map_to_state_vector(map_object: Map) -> torch.Tensor:
         torch.Tensor: A tensor representing the grid state.
     """
 
-    x_coords = [pos.x for pos in map_object.walls]
-    y_coords = [pos.y for pos in map_object.walls]
-
-    x_min, x_max = min(x_coords), max(x_coords)
-    y_min, y_max = min(y_coords), max(y_coords)
-
-    state = []
-
-    for x in range(x_min, x_max + 1):
-        for y in range(y_min, y_max + 1):
-            position = Position(x, y)
-            
-            if position == map_object.pacman_position:
-                state.append(1.0)
-            elif position in map_object.pellets:
-                state.append(2.0)
-            elif position in map_object.walls:
-                continue
-            else:
-                state.append(0.0)
-
-    return torch.tensor(state, dtype=torch.float32)
+    return map_object.state_tensor.flatten()
 
 
 def map_to_state_matrix(map_object: Map) -> torch.Tensor:
@@ -73,26 +53,7 @@ def map_to_state_matrix(map_object: Map) -> torch.Tensor:
         torch.Tensor: A tensor representing the grid state.
     """
 
-    x_coords = [pos.x for pos in map_object.walls]
-    y_coords = [pos.y for pos in map_object.walls]
-
-    x_min, x_max = min(x_coords), max(x_coords)
-    y_min, y_max = min(y_coords), max(y_coords)
-
-    state = torch.zeros((x_max - x_min + 1, y_max - y_min + 1), dtype=torch.float32)
-
-    for x in range(x_min, x_max + 1):
-        for y in range(y_min, y_max + 1):
-            position = Position(x, y)
-            
-            if position == map_object.pacman_position:
-                state[x - x_min, y - y_min] = 1.0
-            elif position in map_object.pellets:
-                state[x - x_min, y - y_min] = 2.0
-            elif position in map_object.walls:
-                state[x - x_min, y - y_min] = -1.0
-
-    return state
+    return map_object.state_tensor
 
 
 class QNetworkDense(nn.Module):
@@ -100,7 +61,7 @@ class QNetworkDense(nn.Module):
     A neural network for estimating Q-values of state-action pairs.
     """
 
-    def __init__(self, state_size, action_size, hidden_size=128):
+    def __init__(self, state_size, action_size, hidden_size=64):
         """
         Initializes the Q-Network.
 
@@ -231,6 +192,7 @@ class DQNAgent(Controller):
             float: The Q-value associated with the given state-action pair.
         """
         with torch.no_grad():
+            state = state.to(self.device)
             q_values = self.q_network(state)
             return q_values[action].item()
 
@@ -251,6 +213,7 @@ class DQNAgent(Controller):
 
         state_tensor = self.state_converter(state)
         with torch.no_grad():
+            state_tensor = state_tensor.to(self.device)
             q_values = self.q_network(state_tensor)
             best_action_index = torch.argmax(q_values).item()
             best_action = actions[best_action_index]
@@ -273,6 +236,8 @@ class DQNAgent(Controller):
         """
         Samples a minibatch from the replay buffer and performs a learning step.
         """
+        # full_time_start = time.perf_counter()
+        # measure_time = 0.0
         if len(self.replay_buffer) < self.batch_size:
             return
 
@@ -284,10 +249,11 @@ class DQNAgent(Controller):
 
         encodings = {k: i for i, k in enumerate(Map.directions.keys())}
 
+        
         state_tensors = torch.stack([self.state_converter(state) for state in states]).to(self.device)
         action_tensors = torch.tensor([encodings[action] for action in actions], dtype=torch.int64).to(self.device)
         reward_tensors = torch.tensor(rewards, dtype=torch.float).to(self.device)
-        next_state_tensors = torch.stack([map_to_state_vector(next_state) for next_state in next_states]).to(self.device)
+        next_state_tensors = torch.stack([self.state_converter(next_state) for next_state in next_states]).to(self.device)
         done_tensors = torch.tensor(dones, dtype=torch.bool).to(self.device)
 
         # Compute Q(s, a) and Q(s', a')
@@ -304,9 +270,12 @@ class DQNAgent(Controller):
         loss = self.loss(q_values, expected_q_values)
 
         # Optimize the model
+        # measure_start_time = time.perf_counter()
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        # measure_end_time = time.perf_counter()
+        # measure_time += measure_end_time - measure_start_time
 
         # Update the target network
         self.step_count += 1
@@ -317,6 +286,9 @@ class DQNAgent(Controller):
             # Log the loss and learning rate
             current_lr = self.optimizer.param_groups[0]['lr']
             self.logger.info(f"Step: {self.step_count}, Loss: {loss.item():.4f}, Learning Rate: {current_lr:.6f}")
+        
+        # full_time_end = time.perf_counter()
+        # print(full_time_end - full_time_start, measure_time, measure_time / (full_time_end - full_time_start))
 
     def run_episode(self, env: PacmanEnvironment) -> int:
         """
@@ -369,8 +341,8 @@ class DQNAgent(Controller):
             total_reward, score = self.run_episode(env)
             mean_score += score
             mean_reward += total_reward
-            if (i + 1) % 100 == 0:
-                pbar.set_description(f"Mean score on last 100 episodes: {mean_score / 100:.0f}, Mean reward on last 100 episodes: {mean_reward / 100:.0f}, Epsilon: {self.epsilon:.4f}")
+            if (i + 1) % 10 == 0:
+                pbar.set_description(f"Mean score on last 10 episodes: {mean_score / 10:.0f}, Mean reward on last 10 episodes: {mean_reward / 10:.0f}, Epsilon: {self.epsilon:.4f}")
                 mean_score = 0
 
         self.lastAction = None
