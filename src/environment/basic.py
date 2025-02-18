@@ -25,7 +25,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         self.cell_size = cell_size
         self.max_steps = max_steps
         self.full_hash = full_hash
-        
+
     def get_grid_size(self):
         return self.grid_size
 

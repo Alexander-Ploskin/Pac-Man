@@ -1,10 +1,6 @@
-# to-do
-# add learning rate scheduler
-
-
 import random
-import numpy as np
 from collections import deque
+import logging
 
 import torch
 import torch.nn as nn
@@ -15,6 +11,9 @@ from tqdm import tqdm
 from src.controller import Controller
 from src.state import Map, Observation, ActionSpaceEnum, Position
 from src.environment import PacmanEnvironment
+
+
+MAX_ENV_STEPS = 200
 
 
 def map_to_state_vector(map_object: Map) -> torch.Tensor:
@@ -142,14 +141,14 @@ class QNetworkConv(nn.Module):
         pass
 
 
-class DQN(Controller):
+class DQNAgent(Controller):
     """
     Deep Q-Network agent.
     """
 
-    def __init__(self, state_size, action_size, nn_type='dense', alpha=0.001, 
-                 gamma=0.98, train_epsilon=0.9, test_epsilon=0.2,
-                 epsilon_decay=0.99997, replay_buffer_size=10000,
+    def __init__(self, state_size, action_size, nn_type='dense', alpha=0.01,
+                 gamma=0.98, train_epsilon=0.9, test_epsilon=0.05,
+                 epsilon_decay=0.99997, replay_buffer_size=1000,
                  batch_size=64, target_update_interval=1000,
                  numTraining=100000, verbose=False, device="cpu"):
         """
@@ -198,7 +197,7 @@ class DQN(Controller):
 
         self.target_network.load_state_dict(self.q_network.state_dict())  # Initialize target network with Q-network weights
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.alpha)
-        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * 200 // self.target_update_interval)  # 200 is from maximum number of samples in environment
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * MAX_ENV_STEPS // self.target_update_interval)  # 200 is from maximum number of samples in environment
 
         self.loss = nn.MSELoss()
 
@@ -211,6 +210,14 @@ class DQN(Controller):
         self.lastState: Map | None = None
         self.train_ = True
         self.step_count = 0
+
+        # Logger setup
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler = logging.FileHandler('dqn_agent.log')
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
 
     def getQValue(self, state: torch.Tensor, action: int) -> float:
         """
@@ -275,24 +282,20 @@ class DQN(Controller):
         # Convert the minibatch to tensors
         states, actions, rewards, next_states, dones = zip(*minibatch)
 
+        encodings = {k: i for i, k in enumerate(Map.directions.keys())}
+
         state_tensors = torch.stack([self.state_converter(state) for state in states]).to(self.device)
-        action_tensors = torch.tensor([Map.keys().index(action) for action in actions], dtype=torch.int64).to(self.device)
+        action_tensors = torch.tensor([encodings[action] for action in actions], dtype=torch.int64).to(self.device)
         reward_tensors = torch.tensor(rewards, dtype=torch.float).to(self.device)
         next_state_tensors = torch.stack([map_to_state_vector(next_state) for next_state in next_states]).to(self.device)
         done_tensors = torch.tensor(dones, dtype=torch.bool).to(self.device)
-
-        ### CHECK THE DIMS!!!!! ###
-        ### CHECK THE DIMS!!!!! ###
 
         # Compute Q(s, a) and Q(s', a')
         outputs = self.q_network(state_tensors)
         q_values = outputs[torch.arange(outputs.size(0)), action_tensors]
         # q_values = self.q_network(state_tensors).gather(1, action_tensors.unsqueeze(1)).squeeze()
-        next_q_values = torch.max(self.target_network(next_state_tensors), dim=-1)
+        next_q_values, _ = torch.max(self.target_network(next_state_tensors), dim=-1)
         next_q_values[done_tensors] = 0.0  # Zero out terminal states
-
-        ### CHECK THE DIMS!!!!! ###
-        ### CHECK THE DIMS!!!!! ###
 
         # Compute the expected Q values
         expected_q_values = reward_tensors + self.gamma * next_q_values
@@ -310,6 +313,10 @@ class DQN(Controller):
         if self.step_count % self.target_update_interval == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())
             self.scheduler.step()
+        
+        # Log the loss and learning rate
+        current_lr = self.optimizer.param_groups[0]['lr']
+        self.logger.info(f"Step: {self.step_count}, Loss: {loss.item():.4f}, Learning Rate: {current_lr:.6f}")
 
     def run_episode(self, env: PacmanEnvironment) -> int:
         """
@@ -381,3 +388,82 @@ class DQN(Controller):
         """
         self.train_ = False
         return self.best_action(observation.map)
+
+    def save(self, filename: str) -> None:
+        """
+        Saves the Q-network, target network, optimizer state, replay buffer, and other relevant parameters to a file.
+
+        Args:
+            filename (str): The path to the file where the agent's state will be saved.
+        """
+        torch.save({
+            'q_network_state_dict': self.q_network.state_dict(),
+            'target_network_state_dict': self.target_network.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
+            'replay_buffer': self.replay_buffer,
+            'epsilon': self.epsilon,
+            'episodes_passed': self.episodesPassed,
+            'step_count': self.step_count,
+            'alpha': self.alpha,
+            'gamma': self.gamma,
+            'test_epsilon': self.test_epsilon,
+            'epsilon_decay': self.epsilon_decay,
+            'batch_size': self.batch_size,
+            'target_update_interval': self.target_update_interval,
+            'num_training': self.numTraining,
+            'nn_type': self.nn_type
+        }, filename)
+
+    def load(self, filename: str) -> None:
+        """
+        Loads the Q-network, target network, optimizer state, replay buffer, and other relevant parameters from a file.
+
+        Args:
+            filename (str): The path to the file from which the agent's state will be loaded.
+        """
+        checkpoint = torch.load(filename, map_location=self.device)
+
+        # Load network type
+        self.nn_type = checkpoint.get('nn_type', 'dense')
+
+        # Initialize networks based on loaded type
+        if self.nn_type == 'dense':
+            self.state_converter = map_to_state_vector
+            self.q_network = QNetworkDense(self.state_size, self.action_size).to(self.device)
+            self.target_network = QNetworkDense(self.state_size, self.action_size).to(self.device)
+        elif self.nn_type == 'conv':
+            self.state_converter = map_to_state_matrix
+            self.q_network = QNetworkConv(self.state_size, self.action_size).to(self.device)
+            self.target_network = QNetworkConv(self.state_size, self.action_size).to(self.device)
+        else:
+            raise ValueError(f"Unknown network type: {self.nn_type}")
+
+        # Load state dictionaries
+        self.q_network.load_state_dict(checkpoint['q_network_state_dict'])
+        self.target_network.load_state_dict(checkpoint['target_network_state_dict'])
+
+        # Load optimizer state
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # Manually move optimizer's state to the correct device
+        for state in self.optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(self.device)
+        
+        # Load scheduler
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * MAX_ENV_STEPS // self.target_update_interval)
+        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
+        # Load other parameters
+        self.replay_buffer = checkpoint['replay_buffer']
+        self.epsilon = checkpoint['epsilon']
+        self.episodesPassed = checkpoint['episodes_passed']
+        self.step_count = checkpoint['step_count']
+        self.alpha = checkpoint['alpha']
+        self.gamma = checkpoint['gamma']
+        self.test_epsilon = checkpoint['test_epsilon']
+        self.epsilon_decay = checkpoint['epsilon_decay']
+        self.batch_size = checkpoint['batch_size']
+        self.target_update_interval = checkpoint['target_update_interval']
+        self.numTraining = checkpoint['num_training']

@@ -80,12 +80,12 @@ class Map:
     ghost_position_to_color: Dict[Position, GhostColorEnum]
     pacman_position: Position
 
-    directions = {
-        ActionSpaceEnum.UP: (0, -1),
-        ActionSpaceEnum.RIGHT: (1, 0),
-        ActionSpaceEnum.DOWN: (0, 1),
-        ActionSpaceEnum.LEFT: (-1, 0)
-    }
+    directions = OrderedDict([
+        (ActionSpaceEnum.UP, (0, -1)),
+        (ActionSpaceEnum.RIGHT, (1, 0)),
+        (ActionSpaceEnum.DOWN, (0, 1)),
+        (ActionSpaceEnum.LEFT, (-1, 0))
+    ])
 
 
     def __hash__(self):

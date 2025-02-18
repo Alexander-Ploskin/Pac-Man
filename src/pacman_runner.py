@@ -4,7 +4,8 @@ import json
 from uuid import uuid4
 from src.environment import BasicPacmanEnvironment, GhostsPacmanEnvironment
 from src.drawer import PygameDrawer
-from src.controller import BasicController, QLearnAgent, ValueIterationAgent
+from src.controller import BasicController, QLearnAgent, ValueIterationAgent, DQNAgent
+from src.controller import map_to_state_vector, map_to_state_matrix
 from src.evaluation import evaluate_algorithm
 
 
@@ -96,7 +97,7 @@ def create_random_controller():
     return BasicController()
 
 
-def create_qlearn_controller(environment, model_path, **params):
+def create_qlearn_controller(environment, model_path=None, **params):
     """
     Create and optionally train a Q-learning controller.
 
@@ -119,7 +120,7 @@ def create_qlearn_controller(environment, model_path, **params):
     return controller
 
 
-def create_value_iteration_controller(environment, model_path, **params):
+def create_value_iteration_controller(environment, model_path=None, **params):
     """
     Create and optionally train a Value Iteration controller.
 
@@ -136,9 +137,40 @@ def create_value_iteration_controller(environment, model_path, **params):
         print(f"Loading model from {model_path}...")
         controller.load_model(model_path)
     else:
-        print("Training ValueIterationAgent from scratch...")
+        print("Training Value Iteration Agent from scratch...")
         controller.train(environment)
         save_model(controller, params, 'value_iteration')
+
+def create_dqn_controller(environment, model_path=None, **params):
+    """
+    Creates and trains an instance of a DQN controller.
+
+    Args:
+        environment: Instance of the environment on which to train the controller.
+
+    Returns:
+        DQNAgent: Instance of the controller.
+    """
+    observation = environment.reset()
+    if "nn_type" in params:
+        if params["nn_type"] == "dense":
+            state_size = map_to_state_vector(observation.map).size(0)
+        elif params["nn_type"] == "conv":
+            state_size = map_to_state_matrix(observation.map).size()
+        else:
+            raise AttributeError("Unknown nn_type")
+    action_size = len(observation.map.directions)
+    params["state_size"] = state_size
+    params["action_size"] = action_size
+
+    controller = DQNAgent(**params)
+    if model_path is not None and os.path.exists(model_path):
+        print(f"Loading model from {model_path}...")
+        controller.load_model(model_path)
+    else:
+        print("Training DQN from scratch...")
+        controller.train(environment)
+        save_model(controller, params, 'dqn')
     return controller
 
 def save_model(controller, params, method):
@@ -180,6 +212,8 @@ def create_controller(environment, controller_type, **params):
         return create_qlearn_controller(environment, **params)
     elif controller_type == 'value_iteration':
         return create_value_iteration_controller(environment, **params)
+    elif controller_type == 'dqn':
+        return create_dqn_controller(environment, **params)
     else:
         raise ValueError(f"Invalid controller type: {controller_type}")
 
@@ -204,6 +238,7 @@ def print_metrics(num_episodes, environment_args, controller_args):
     """
     Evaluate a controller on an environment and print performance metrics.
 
+<<<<<<< HEAD
     Args:
         num_episodes (int): The number of episodes to run for evaluation.
         environment_args (dict): Arguments for creating the game environment.
