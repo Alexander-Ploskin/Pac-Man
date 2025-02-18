@@ -157,6 +157,10 @@ class DQNAgent(Controller):
         self.target_network = self.target_network.to(self.device)
 
         self.target_network.load_state_dict(self.q_network.state_dict())  # Initialize target network with Q-network weights
+
+        for param in self.target_network.parameters():
+            param.requires_grad = False
+
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.alpha)
         self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * MAX_ENV_STEPS // self.target_update_interval)  # 200 is from maximum number of samples in environment
 
@@ -281,6 +285,9 @@ class DQNAgent(Controller):
         self.step_count += 1
         if self.step_count % self.target_update_interval == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())
+
+            # for param in self.target_network.parameters():
+            #     param.requires_grad = False
             self.scheduler.step()
         
             # Log the loss and learning rate
