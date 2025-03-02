@@ -127,7 +127,14 @@ class ValueIterationAgent(Controller):
                     pellets = set(pellet_subset)
                     # Optionally, if you prefer that the cell where Pac-Man stands never has a pellet
                     # (as it is immediately consumed), this setup already enforces that.
-                    yield Map(walls=walls, pellets=pellets, pacman_position=pacman_position)
+                    yield Map(
+                        walls=walls,
+                        pellets=pellets,
+                        pacman_position=pacman_position,
+                        size=grid_size,
+                        ghost_positions=set(),
+                        ghost_position_to_color={}
+                    )
 
 
     def get_action(self, observation: Observation) -> ActionSpaceEnum | None:

@@ -1,0 +1,11 @@
+defaults:
+  - _self_
+  - controller: random
+  - environment: ghosts
+  - override hydra/job_logging: stdout
+
+grid_size: 10
+cell_size: 40
+framerate: 2
+eval: true
+num_episodes: 1000

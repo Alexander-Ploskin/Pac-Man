@@ -146,7 +146,7 @@ class Map:
 
 class MapFullHash(Map):
     def __hash__(self):
-        return hash((frozenset(self.pellets), self.pacman_position, self.ghost_positions))
+        return hash((frozenset(self.pellets), self.pacman_position, frozenset(self.ghost_positions)))
 
 
 @dataclass

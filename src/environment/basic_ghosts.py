@@ -20,6 +20,7 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         grid_size=10,
         num_ghosts=1,
         max_steps=200,
+        stability_rate=0.75,
         full_hash=False):
         """
         Initialize the environment parameters and reset it.
@@ -34,7 +35,7 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         self.num_ghosts = num_ghosts
         self.max_steps = max_steps
         self.full_hash = full_hash
-        self.ghosts_strategy = RandomGhostStrategy(continue_direction_probability=0.75)
+        self.ghosts_strategy = RandomGhostStrategy(stability_rate=stability_rate)
         
     def get_grid_size(self):
         return self.grid_size

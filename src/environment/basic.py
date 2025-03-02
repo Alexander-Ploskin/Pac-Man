@@ -92,7 +92,6 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             score=0,
             step_count=0,
             map=self.map,
-            size=self.grid_size
         )
 
     def step(self, action: ActionSpaceEnum) -> Observation:

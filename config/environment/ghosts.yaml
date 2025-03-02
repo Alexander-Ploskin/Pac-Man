@@ -1,0 +1,4 @@
+type: ghosts
+num_ghosts: 2
+stability_rate: 0.75
+full_hash: true
