@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Set, List
+import numpy as np
 
 
 class ActionSpaceEnum(int, Enum):
@@ -44,6 +45,12 @@ class Position:
     """
     x: int
     y: int
+    
+    def __add__(self, other: 'Position') -> 'Position':
+        """Adds two Positions component-wise, returning a new frozen instance."""
+        if not isinstance(other, Position):
+            return NotImplemented
+        return Position(self.x + other.x, self.y + other.y)
 
 @dataclass
 class Map:
@@ -55,8 +62,10 @@ class Map:
         pellets (Set[Position]): Set of positions where pellets are located.
         pacman_position (Position): The current position of Pac-Man.
     """
+    size: int
     walls: Set[Position]
     pellets: Set[Position]
+    ghost_positions: Set[Position]
     pacman_position: Position
 
     directions = {
@@ -145,3 +154,13 @@ class Observation:
     score: int
     step_count: int
     map: Map
+    
+    def to_numpy(self):
+        state = np.zeros((self.map.size, self.size))
+        for wall in self.map.walls:
+            state[wall.y, wall.x] = -1
+        for pellet in self.map.pellets:
+            state[pellet.y, pellet.x] = 1
+        state[self.map.pacman_position.y, self.map.pacman_position.x] = 2
+        for ghost in self.map.ghost_positions:
+            state[ghost.x, ghost.y] = -2

@@ -1,7 +1,7 @@
 import pygame
 import os
 from uuid import uuid4
-from src.environment import BasicPacmanEnvironment
+from src.environment import BasicPacmanEnvironment, GhostsPacmanEnvironment
 from src.drawer import PygameDrawer
 from src.controller import BasicController, QLearnAgent, ValueIterationAgent
 from src.evaluation import evaluate_algorithm
@@ -42,7 +42,7 @@ def run_algorithm(environment, drawer, controller):
     drawer.close()
 
 
-def create_environment(environment_name, grid_size, full_hash=True):
+def create_environment(environment_name, grid_size, num_ghosts=0, full_hash=True):
     """
     Creates and returns an instance of the specified environment.
 
@@ -54,6 +54,8 @@ def create_environment(environment_name, grid_size, full_hash=True):
     """
     if environment_name == 'basic':
         environment = BasicPacmanEnvironment(full_hash=full_hash, grid_size=grid_size)
+    if environment_name == 'ghosts':
+        environment = GhostsPacmanEnvironment(full_hash=full_hash, grid_size=grid_size, num_ghosts=num_ghosts)
     else:
         raise ValueError(f"Invalid environment name: {environment_name}")
 
@@ -137,7 +139,7 @@ def create_value_iteration_controller(environment, model_path, **params):
     return controller
 
 
-def run_game(environment_name, controller_type, grid_size=10, model_path=None, full_hash=True, **params):
+def run_game(environment_name, controller_type, grid_size=10, num_ghosts=0, model_path=None, full_hash=True, **params):
     """
     Runs the Pac-Man game with the specified environment and controller type.
 
@@ -146,7 +148,7 @@ def run_game(environment_name, controller_type, grid_size=10, model_path=None, f
         controller_type (str): Type of controller to use ('random', 'qlearn' or 'value_iteration').
         full_hash (bool): Use full hashable maps for states or not (only for qlearn with basic env).
     """
-    environment = create_environment(environment_name, grid_size=grid_size, full_hash=full_hash)
+    environment = create_environment(environment_name, grid_size=grid_size, num_ghosts=num_ghosts, full_hash=full_hash)
     drawer = create_drawer(grid_size=grid_size)
 
     if controller_type == 'random':

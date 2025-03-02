@@ -11,7 +11,7 @@ class PygameDrawer(Drawer):
     grid lines, walls, pellets (as small circles), and the Pac-Man character.
     """
 
-    def __init__(self, grid_size=10, cell_size=40, framerate=10):
+    def __init__(self, grid_size=10, cell_size=40, framerate=1):
         """
         Initializes the Pygame drawer with display settings.
 
@@ -47,6 +47,7 @@ class PygameDrawer(Drawer):
         bg_color = (0, 0, 0)
         wall_color = (50, 50, 50)
         pellet_color = (255, 255, 0)
+        ghost_color = (255, 0, 255)
         pacman_color = (255, 255, 0)
         
         # Fill the background
@@ -75,6 +76,12 @@ class PygameDrawer(Drawer):
             cy = pellet.y * self.cell_size + self.cell_size // 2
             radius = self.cell_size // 8
             pygame.draw.circle(self.screen, pellet_color, (cx, cy), radius)
+
+        for ghost in map.ghost_positions:
+            cx = ghost.x * self.cell_size + self.cell_size // 2
+            cy = ghost.y * self.cell_size + self.cell_size // 2
+            radius = self.cell_size // 2 - 4
+            pygame.draw.circle(self.screen, ghost_color, (cx, cy), radius)
         
         # Draw Pac-Man as a larger circle to highlight its presence
         cx = map.pacman_position.x * self.cell_size + self.cell_size // 2

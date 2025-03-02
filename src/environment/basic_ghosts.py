@@ -1,30 +1,40 @@
 from src.environment import PacmanEnvironment
 from src.state import Position, Observation, Map, ActionSpaceEnum, MapFullHash
+from src.environment.ghosts import Ghost
+from src.environment.ghosts.strategy import RandomGhostStrategy
+from typing import Set
+import random
 
 
-class BasicPacmanEnvironment(PacmanEnvironment):
+class GhostsPacmanEnvironment(PacmanEnvironment):
     """
-    A basic grid-based implementation of the Pac-Man environment for RL.
+    An implementation of grid-based Pac-Man environment with ghosts for RL.
 
-    This environment sets up walls, pellets, and the Pac-Man, and defines
-    simple dynamics such as movement, rewards for eating pellets, and penalties for
-    hitting walls.
+    This environment sets up walls, pellets, ghosts and the Pac-Man, and defines
+    simple dynamics such as Pac-Man movement, ghosts behavior, rewards for eating pellets,
+    and penalties for hitting walls and ghosts.
     """
 
-    def __init__(self, grid_size=10, cell_size=40, max_steps=200, full_hash=False):
+    def __init__(
+        self,
+        grid_size=10,
+        num_ghosts=1,
+        max_steps=200,
+        full_hash=False):
         """
         Initialize the environment parameters and reset it.
 
         Args:
             grid_size (int): Number of cells per side in the grid.
-            cell_size (int): Pixel size of each cell (used for rendering).
+            num_ghosts (int): Number of ghosts moving on the map.
             max_steps (int): Maximum number of steps allowed in an episode.
             full_hash (bool): Use full hashable maps
         """
         self.grid_size = grid_size
-        self.cell_size = cell_size
+        self.num_ghosts = num_ghosts
         self.max_steps = max_steps
         self.full_hash = full_hash
+        self.ghosts_strategy = RandomGhostStrategy(continue_direction_probability=0.75)
         
     def get_grid_size(self):
         return self.grid_size
@@ -47,20 +57,39 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         
         # Add internal walls (an example pattern)
         if inner_walls:
-            for r in range(2, self.grid_size - 2, 2):
-                walls.add(Position(r, self.grid_size // 2))
+            for x in range(2, self.grid_size - 2, 2):
+                walls.add(Position(x, self.grid_size // 2))
         
         # Populate the grid with pellets where there are no walls
         pellets = set()
-        for r in range(self.grid_size):
-            for c in range(self.grid_size):
-                if Position(r, c) not in walls:
-                    pellets.add(Position(r, c))
+        for x in range(self.grid_size):
+            for y in range(self.grid_size):
+                if Position(x, y) not in walls:
+                    pellets.add(Position(x, y))
         
         # Place Pac-Man at the grid center and remove any pellet at that position
         pacman_position = Position(self.grid_size // 2, self.grid_size // 2)
         if pacman_position in pellets:
             pellets.remove(pacman_position)
+
+        # Initialize ghosts
+        valid_ghost_positions = []
+        ghosts: Set[Ghost] = set()
+        for x in range(self.grid_size):
+            for y in range(self.grid_size):
+                position = Position(x, y)
+                if position not in walls and position != pacman_position:
+                    valid_ghost_positions.append(Position(x, y))
+        
+        for _ in range(self.num_ghosts):
+            if not valid_ghost_positions:
+                raise ValueError("Not enough valid positions for ghosts")
+            ghost_position = random.choice(valid_ghost_positions)
+            ghosts.add(Ghost(ghost_position, self.ghosts_strategy))
+            valid_ghost_positions.remove(ghost_position)
+        
+        self.ghosts = ghosts
+        ghost_positions = {ghost.position for ghost in ghosts}
         
         # Initialize game state variables
         self.score = 0
@@ -72,7 +101,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 walls=walls,
                 pellets=pellets,
                 pacman_position=pacman_position,
-                ghost_positions=set(),
+                ghost_positions=ghost_positions,
                 size=self.grid_size
             )
         else:
@@ -80,7 +109,8 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 walls=walls,
                 pellets=pellets,
                 pacman_position=pacman_position,
-                ghost_positions=set()
+                ghost_positions=ghost_positions,
+                size=self.grid_size
             )
         
         return Observation(
@@ -88,8 +118,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             done=False,
             score=0,
             step_count=0,
-            map=self.map,
-            size=self.grid_size
+            map=self.map
         )
 
     def step(self, action: ActionSpaceEnum) -> Observation:
@@ -134,8 +163,6 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         new_x = current_position.x + delta[0]
         new_y = current_position.y + delta[1]
         new_position = Position(new_x, new_y)
-        
-        reward = self.compute_reward(self.map, current_position, new_position)
 
         # Check if new position is a wall.
         if new_position in self.map.walls:
@@ -148,6 +175,15 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 self.map.pellets.remove(new_position)
                 self.score += 10
 
+        for ghost in self.ghosts:
+            ghost.move(self.map)
+        
+        # Collision detection
+        if self.map.pacman_position in self.map.ghost_positions:
+            self.done = True
+
+        reward = self.compute_reward(self.map, current_position, new_position)
+        
         self.step_count += 1
         
         # Termination condition: either all pellets are eaten or max steps reached.
@@ -177,6 +213,10 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         """
         reward = -1  # default step cost
 
+        # check if the candidate is eaten by a ghost
+        if candidate in map_instance.ghost_positions:
+            return -100
+        
         # Check if candidate hits a wall.
         if candidate in map_instance.walls:
             reward = -50
@@ -184,5 +224,6 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             # If there is a pellet at the candidate position, add reward but do not remove it here.
             if candidate in map_instance.pellets:
                 reward += 10
+                
 
         return reward
