@@ -12,16 +12,40 @@ ghost_action_space = {
 }
 
 class Ghost:
+    """
+    Represents a ghost in the Pac-Man game.
+
+    Attributes:
+        prev_action (Optional[ActionSpaceEnum]): The ghost's previous action.
+        position (Position): The current position of the ghost.
+        strategy (GhostStrategy): The strategy used by the ghost for movement.
+        color (GhostColorEnum): The color of the ghost.
+    """
+
     prev_action: Optional[ActionSpaceEnum]
     position: Position
     
     def __init__(self, position: Position, strategy: GhostStrategy, color: GhostColorEnum):
+        """
+        Initialize a new Ghost instance.
+
+        Args:
+            position (Position): The initial position of the ghost.
+            strategy (GhostStrategy): The movement strategy for the ghost.
+            color (GhostColorEnum): The color of the ghost.
+        """
         self.position = position
         self.prev_action = None
         self.strategy = strategy
         self.color = color
     
     def move(self, map: Map):
+        """
+        Move the ghost on the map based on its strategy.
+
+        Args:
+            map (Map): The current game map.
+        """
         possible_actions = [
             action
             for action, (dx, dy) in ghost_action_space.items()

@@ -8,11 +8,11 @@ import random
 
 class GhostsPacmanEnvironment(PacmanEnvironment):
     """
-    An implementation of grid-based Pac-Man environment with ghosts for RL.
+    A grid-based Pac-Man environment with ghosts for reinforcement learning.
 
-    This environment sets up walls, pellets, ghosts and the Pac-Man, and defines
-    simple dynamics such as Pac-Man movement, ghosts behavior, rewards for eating pellets,
-    and penalties for hitting walls and ghosts.
+    This environment includes walls, pellets, ghosts, and Pac-Man. It defines
+    game dynamics such as Pac-Man and ghost movements, rewards for eating pellets,
+    and penalties for colliding with walls or ghosts.
     """
 
     def __init__(
@@ -23,13 +23,14 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         stability_rate=0.75,
         full_hash=False):
         """
-        Initialize the environment parameters and reset it.
+        Initialize the environment parameters.
 
         Args:
-            grid_size (int): Number of cells per side in the grid.
-            num_ghosts (int): Number of ghosts moving on the map.
-            max_steps (int): Maximum number of steps allowed in an episode.
-            full_hash (bool): Use full hashable maps
+            grid_size (int): Size of the square grid.
+            num_ghosts (int): Number of ghosts in the environment.
+            max_steps (int): Maximum number of steps per episode.
+            stability_rate (float): Probability of ghosts maintaining their current direction.
+            full_hash (bool): Whether to use full hashable maps for state representation.
         """
         self.grid_size = grid_size
         self.num_ghosts = num_ghosts
@@ -38,15 +39,21 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         self.ghosts_strategy = RandomGhostStrategy(stability_rate=stability_rate)
         
     def get_grid_size(self):
+        """Return the size of the grid."""
         return self.grid_size
 
     def reset(self, inner_walls: bool = True) -> Observation:
         """
-        Reset the environment to its initial configuration.
+        Reset the environment to its initial state.
 
-        This method creates boundary walls, adds optional internal walls,
-        places pellets in every non-wall cell, and initializes Pac-Man's
-        starting position at the center.
+        Creates boundary walls, optional internal walls, places pellets,
+        initializes Pac-Man's position, and spawns ghosts.
+
+        Args:
+            inner_walls (bool): Whether to include internal walls.
+
+        Returns:
+            Observation: Initial state of the environment.
         """
         # Create walls along the perimeter
         walls = set()
@@ -130,22 +137,17 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
 
     def step(self, action: ActionSpaceEnum) -> Observation:
         """
-        Perform one step in the environment given an action.
+        Perform one step in the environment based on the given action.
 
-        Dynamics:
-          - Maps the action to a directional change.
-          - Applies a small movement penalty.
-          - Penalizes hitting a wall (no movement happens).
-          - Rewards eating a pellet and updates the score.
-          - Increments the step counter and terminates the episode if there are
-            no remaining pellets or if the maximum number of steps is reached.
+        This method handles Pac-Man movement, ghost movement, pellet consumption,
+        score updates, and episode termination conditions.
 
         Args:
-            action (ActionSpaceEnum): The action to perform.
-            
+            action (ActionSpaceEnum): The action for Pac-Man to perform.
+
         Returns:
-            Observation: Contains updated reward, game state, and whether the episode 
-                      has ended.
+            Observation: Updated state of the environment, including reward and
+                         whether the episode has ended.
         """
         # If already finished, return current state with zero reward.
         if self.done:
@@ -209,15 +211,15 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
     @staticmethod
     def compute_reward(map_instance: Map, current: Position, candidate: Position) -> float:
         """
-        Computes the reward for moving from the current position to a candidate new position.
+        Calculate the reward for a potential Pac-Man move.
 
         Args:
-            map_instance (Map): The current map, including walls and pellets.
+            map_instance (Map): Current state of the game map.
             current (Position): Pac-Man's current position.
-            candidate (Position): The candidate new position based on the action.
+            candidate (Position): Potential new position for Pac-Man.
 
         Returns:
-            - reward (float): The reward to be applied.
+            float: Calculated reward value.
         """
         reward = -1  # default step cost
 
