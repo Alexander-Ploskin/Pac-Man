@@ -1,5 +1,5 @@
 import pygame
-from src.state import Map
+from src.state import Map, ActionSpaceEnum
 from src.drawer import Drawer
 
 
@@ -11,7 +11,7 @@ class PygameDrawer(Drawer):
     grid lines, walls, pellets (as small circles), and the Pac-Man character.
     """
 
-    def __init__(self, grid_size=10, cell_size=40, framerate=1):
+    def __init__(self, grid_size=10, cell_size=40, framerate=3):
         """
         Initializes the Pygame drawer with display settings.
 
@@ -32,8 +32,30 @@ class PygameDrawer(Drawer):
             (self.grid_size * self.cell_size, self.grid_size * self.cell_size)
         )
         pygame.display.set_caption("Pac-Man RL Environment")
+        self._load_sprites()
 
-    def draw(self, map: Map):
+
+    def _load_sprites(self):
+        """Load and scale all game sprites once during initialization"""
+        # Load base images (replace paths with your actual sprite files)
+        pacman_sprites = {
+            dir: pygame.image.load(f"sprites/pacman_{dir}.png").convert_alpha()
+            for dir in ["RIGHT", "LEFT", "UP", "DOWN", "DEAD"]
+        }
+        self.pacman_imgs = {
+            dir: pygame.transform.scale(img, (self.cell_size, self.cell_size))
+            for dir, img in pacman_sprites.items()
+        }
+        ghost_sprites = {
+            color: pygame.image.load(f"sprites/ghost_{color}.png").convert_alpha()
+            for color in ["green", "red", "orange", "purple", "blue", "brown"]
+        }
+        self.ghost_imgs = {
+            color: pygame.transform.scale(img, (self.cell_size, self.cell_size))
+            for color, img in ghost_sprites.items()
+        }
+
+    def draw(self, map: Map, action: ActionSpaceEnum):
         """
         Render the current game state on the Pygame display.
 
@@ -48,7 +70,6 @@ class PygameDrawer(Drawer):
         wall_color = (50, 50, 50)
         pellet_color = (255, 255, 0)
         ghost_color = (255, 0, 255)
-        pacman_color = (255, 255, 0)
         
         # Fill the background
         self.screen.fill(bg_color)
@@ -72,26 +93,42 @@ class PygameDrawer(Drawer):
         
         # Draw each pellet as a small circle
         for pellet in map.pellets:
+            if pellet in map.ghost_positions:
+                continue
             cx = pellet.x * self.cell_size + self.cell_size // 2
             cy = pellet.y * self.cell_size + self.cell_size // 2
             radius = self.cell_size // 8
             pygame.draw.circle(self.screen, pellet_color, (cx, cy), radius)
 
-        for ghost in map.ghost_positions:
-            cx = ghost.x * self.cell_size + self.cell_size // 2
-            cy = ghost.y * self.cell_size + self.cell_size // 2
-            radius = self.cell_size // 2 - 4
-            pygame.draw.circle(self.screen, ghost_color, (cx, cy), radius)
+        # Draw ghosts with different colored sprites
+        for ghost_pos in map.ghost_positions:
+            if ghost_pos == map.pacman_position:
+                continue
+            ghost_rect = pygame.Rect(
+                ghost_pos.x * self.cell_size,
+                ghost_pos.y * self.cell_size,
+                self.cell_size,
+                self.cell_size
+            )
+            self.screen.blit(self.ghost_imgs[map.ghost_position_to_color[ghost_pos]], ghost_rect)
         
-        # Draw Pac-Man as a larger circle to highlight its presence
-        cx = map.pacman_position.x * self.cell_size + self.cell_size // 2
-        cy = map.pacman_position.y * self.cell_size + self.cell_size // 2
-        radius = self.cell_size // 2 - 4
-        pygame.draw.circle(self.screen, pacman_color, (cx, cy), radius)
+        # Draw Pac-Man with directional sprites
+        pacman_rect = pygame.Rect(
+            map.pacman_position.x * self.cell_size,
+            map.pacman_position.y * self.cell_size,
+            self.cell_size,
+            self.cell_size
+        )
+        pacman_dead = map.pacman_position in map.ghost_positions
+        if pacman_dead:
+            self.screen.blit(self.pacman_imgs["DEAD"], pacman_rect)
+        else:
+            self.screen.blit(self.pacman_imgs[action.name], pacman_rect)
         
         # Update the display and maintain constant framerate
         pygame.display.flip()
-        self.clock.tick(self.framerate)
+        framerate = self.framerate / 10 if pacman_dead else self.framerate
+        self.clock.tick(framerate)
 
     def close(self):
         """

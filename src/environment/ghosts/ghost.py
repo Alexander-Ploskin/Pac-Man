@@ -1,6 +1,7 @@
 from src.environment.ghosts.strategy import GhostStrategy
-from src.state import Position, Map, ActionSpaceEnum
+from src.state import Position, Map, ActionSpaceEnum, GhostColorEnum
 from typing import Optional
+from enum import Enum
 
 
 ghost_action_space = {
@@ -10,15 +11,15 @@ ghost_action_space = {
     ActionSpaceEnum.LEFT: (-1, 0)
 }
 
-
 class Ghost:
     prev_action: Optional[ActionSpaceEnum]
     position: Position
     
-    def __init__(self, position: Position, strategy: GhostStrategy):
+    def __init__(self, position: Position, strategy: GhostStrategy, color: GhostColorEnum):
         self.position = position
         self.prev_action = None
         self.strategy = strategy
+        self.color = color
     
     def move(self, map: Map):
         possible_actions = [
@@ -26,8 +27,6 @@ class Ghost:
             for action, (dx, dy) in ghost_action_space.items()
             if self.position + Position(dx, dy) not in map.walls.union(map.ghost_positions)
         ]
-        print('possible actions: ', possible_actions)
-        print('impossible positions: ', map.walls.union(map.ghost_positions))
         
         if not possible_actions:
             return

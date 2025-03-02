@@ -1,5 +1,5 @@
 from src.environment import PacmanEnvironment
-from src.state import Position, Observation, Map, ActionSpaceEnum, MapFullHash
+from src.state import Position, Observation, Map, ActionSpaceEnum, MapFullHash, GhostColorEnum
 from src.environment.ghosts import Ghost
 from src.environment.ghosts.strategy import RandomGhostStrategy
 from typing import Set
@@ -81,15 +81,19 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
                 if position not in walls and position != pacman_position:
                     valid_ghost_positions.append(Position(x, y))
         
-        for _ in range(self.num_ghosts):
+        colors = [color.value for color in GhostColorEnum]
+        if len(colors) < self.num_ghosts:
+            raise ValueError(self.num_ghosts)
+        for _, color in zip(range(self.num_ghosts), colors):
             if not valid_ghost_positions:
                 raise ValueError("Not enough valid positions for ghosts")
             ghost_position = random.choice(valid_ghost_positions)
-            ghosts.add(Ghost(ghost_position, self.ghosts_strategy))
+            ghosts.add(Ghost(ghost_position, self.ghosts_strategy, color))
             valid_ghost_positions.remove(ghost_position)
         
         self.ghosts = ghosts
         ghost_positions = {ghost.position for ghost in ghosts}
+        ghost_position_to_ghost_color = {ghost.position: ghost.color for ghost in ghosts}
         
         # Initialize game state variables
         self.score = 0
@@ -102,6 +106,7 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
                 pellets=pellets,
                 pacman_position=pacman_position,
                 ghost_positions=ghost_positions,
+                ghost_position_to_color=ghost_position_to_ghost_color,
                 size=self.grid_size
             )
         else:
@@ -110,6 +115,7 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
                 pellets=pellets,
                 pacman_position=pacman_position,
                 ghost_positions=ghost_positions,
+                ghost_position_to_color=ghost_position_to_ghost_color,
                 size=self.grid_size
             )
         
@@ -177,6 +183,7 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
 
         for ghost in self.ghosts:
             ghost.move(self.map)
+        self.map.ghost_position_to_color = {ghost.position: ghost.color for ghost in self.ghosts}
         
         # Collision detection
         if self.map.pacman_position in self.map.ghost_positions:

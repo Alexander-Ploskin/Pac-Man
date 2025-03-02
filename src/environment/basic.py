@@ -73,6 +73,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 pellets=pellets,
                 pacman_position=pacman_position,
                 ghost_positions=set(),
+                ghost_position_to_color={},
                 size=self.grid_size
             )
         else:
@@ -80,7 +81,9 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 walls=walls,
                 pellets=pellets,
                 pacman_position=pacman_position,
-                ghost_positions=set()
+                ghost_positions=set(),
+                ghost_position_to_color={},
+                size=self.grid_size
             )
         
         return Observation(

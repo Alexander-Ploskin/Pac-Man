@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Set, List
+from typing import Set, List, Dict
 import numpy as np
 
 
@@ -34,6 +34,16 @@ class ActionSpaceEnum(int, Enum):
         else:
             return self  # Return itself if no opposite is defined
 
+
+class GhostColorEnum(str, Enum):
+    BLUE = 'blue'
+    GREEN = 'green'
+    BROWN = 'brown'
+    ORANGE = 'orange'
+    PURPLE = 'purple'
+    RED = 'red'
+
+
 @dataclass(frozen=True)
 class Position:
     """
@@ -52,6 +62,7 @@ class Position:
             return NotImplemented
         return Position(self.x + other.x, self.y + other.y)
 
+
 @dataclass
 class Map:
     """
@@ -66,6 +77,7 @@ class Map:
     walls: Set[Position]
     pellets: Set[Position]
     ghost_positions: Set[Position]
+    ghost_position_to_color: Dict[Position, GhostColorEnum]
     pacman_position: Position
 
     directions = {
@@ -134,7 +146,7 @@ class Map:
 
 class MapFullHash(Map):
     def __hash__(self):
-        return hash((frozenset(self.pellets), self.pacman_position))
+        return hash((frozenset(self.pellets), self.pacman_position, self.ghost_positions))
 
 
 @dataclass

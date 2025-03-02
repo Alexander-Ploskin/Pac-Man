@@ -31,7 +31,7 @@ def run_algorithm(environment, drawer, controller):
         print(f"Step: {observation.step_count}, Action: {action}, Reward: {observation.reward}, Score: {observation.score}")
 
         # Render the current game state.
-        drawer.draw(observation.map)
+        drawer.draw(observation.map, action)
 
         # Reset the environment if the episode has ended.
         if observation.done:
@@ -62,7 +62,7 @@ def create_environment(environment_name, grid_size, num_ghosts=0, full_hash=True
     return environment
 
 
-def create_drawer(grid_size=10, cell_size=40, framerate=10):
+def create_drawer(grid_size=10, cell_size=40, framerate=3):
     """
     Creates and returns an instance of the Pygame drawer.
 
