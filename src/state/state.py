@@ -143,6 +143,16 @@ class Map:
             legal_actions.append(action)
         return legal_actions
 
+    def to_numpy(self):
+        state = np.zeros((self.size, self.size))
+        for wall in self.walls:
+            state[wall.y, wall.x] = -1
+        for pellet in self.pellets:
+            state[pellet.y, pellet.x] = 1
+        state[self.pacman_position.y, self.pacman_position.x] = 2
+        for ghost in self.ghost_positions:
+            state[ghost.x, ghost.y] = -2
+
 
 class MapFullHash(Map):
     def __hash__(self):
@@ -166,13 +176,3 @@ class Observation:
     score: int
     step_count: int
     map: Map
-    
-    def to_numpy(self):
-        state = np.zeros((self.map.size, self.size))
-        for wall in self.map.walls:
-            state[wall.y, wall.x] = -1
-        for pellet in self.map.pellets:
-            state[pellet.y, pellet.x] = 1
-        state[self.map.pacman_position.y, self.map.pacman_position.x] = 2
-        for ghost in self.map.ghost_positions:
-            state[ghost.x, ghost.y] = -2
