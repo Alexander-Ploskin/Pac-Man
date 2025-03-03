@@ -71,13 +71,19 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             self.map = MapFullHash(
                 walls=walls,
                 pellets=pellets,
-                pacman_position=pacman_position
+                pacman_position=pacman_position,
+                ghost_positions=set(),
+                ghost_position_to_color={},
+                size=self.grid_size
             )
         else:
             self.map = Map(
                 walls=walls,
                 pellets=pellets,
-                pacman_position=pacman_position
+                pacman_position=pacman_position,
+                ghost_positions=set(),
+                ghost_position_to_color={},
+                size=self.grid_size
             )
         
         return Observation(
@@ -85,7 +91,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             done=False,
             score=0,
             step_count=0,
-            map=self.map
+            map=self.map,
         )
 
     def step(self, action: ActionSpaceEnum) -> Observation:

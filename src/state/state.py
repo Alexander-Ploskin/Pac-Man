@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Set, List
+from typing import Set, List, Dict
+import numpy as np
 
 
 class ActionSpaceEnum(int, Enum):
@@ -33,6 +34,16 @@ class ActionSpaceEnum(int, Enum):
         else:
             return self  # Return itself if no opposite is defined
 
+
+class GhostColorEnum(str, Enum):
+    BLUE = 'blue'
+    GREEN = 'green'
+    BROWN = 'brown'
+    ORANGE = 'orange'
+    PURPLE = 'purple'
+    RED = 'red'
+
+
 @dataclass(frozen=True)
 class Position:
     """
@@ -44,6 +55,13 @@ class Position:
     """
     x: int
     y: int
+    
+    def __add__(self, other: 'Position') -> 'Position':
+        """Adds two Positions component-wise, returning a new frozen instance."""
+        if not isinstance(other, Position):
+            return NotImplemented
+        return Position(self.x + other.x, self.y + other.y)
+
 
 @dataclass
 class Map:
@@ -55,8 +73,11 @@ class Map:
         pellets (Set[Position]): Set of positions where pellets are located.
         pacman_position (Position): The current position of Pac-Man.
     """
+    size: int
     walls: Set[Position]
     pellets: Set[Position]
+    ghost_positions: Set[Position]
+    ghost_position_to_color: Dict[Position, GhostColorEnum]
     pacman_position: Position
 
     directions = {
@@ -122,10 +143,20 @@ class Map:
             legal_actions.append(action)
         return legal_actions
 
+    def to_numpy(self):
+        state = np.zeros((self.size, self.size))
+        for wall in self.walls:
+            state[wall.y, wall.x] = -1
+        for pellet in self.pellets:
+            state[pellet.y, pellet.x] = 1
+        state[self.pacman_position.y, self.pacman_position.x] = 2
+        for ghost in self.ghost_positions:
+            state[ghost.x, ghost.y] = -2
+
 
 class MapFullHash(Map):
     def __hash__(self):
-        return hash((frozenset(self.pellets), self.pacman_position))
+        return hash((frozenset(self.pellets), self.pacman_position, frozenset(self.ghost_positions)))
 
 
 @dataclass

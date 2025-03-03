@@ -1,0 +1,5 @@
+type: value_iteration
+gamma: 0.98
+theta: 1e-6
+max_iterations: 20
+model_path: null

@@ -1,7 +1,8 @@
 import pygame
 import os
+import json
 from uuid import uuid4
-from src.environment import BasicPacmanEnvironment
+from src.environment import BasicPacmanEnvironment, GhostsPacmanEnvironment
 from src.drawer import PygameDrawer
 from src.controller import BasicController, QLearnAgent, ValueIterationAgent
 from src.evaluation import evaluate_algorithm
@@ -9,12 +10,12 @@ from src.evaluation import evaluate_algorithm
 
 def run_algorithm(environment, drawer, controller):
     """
-    Runs the main game loop with the provided environment, drawer, and controller.
+    Execute the main game loop with the given environment, drawer, and controller.
 
     Args:
-        environment: Instance of the Pac-Man environment.
-        drawer: Instance of the Pygame drawer.
-        controller: Instance of the controller.
+        environment: The Pac-Man environment instance.
+        drawer: The Pygame drawer instance for rendering.
+        controller: The game controller instance.
     """
     observation = environment.reset()
     running = True
@@ -31,7 +32,7 @@ def run_algorithm(environment, drawer, controller):
         print(f"Step: {observation.step_count}, Action: {action}, Reward: {observation.reward}, Score: {observation.score}")
 
         # Render the current game state.
-        drawer.draw(observation.map)
+        drawer.draw(observation.map, action)
 
         # Reset the environment if the episode has ended.
         if observation.done:
@@ -42,35 +43,41 @@ def run_algorithm(environment, drawer, controller):
     drawer.close()
 
 
-def create_environment(environment_name, grid_size, full_hash=True):
+def create_environment(environment_name, **params):
     """
-    Creates and returns an instance of the specified environment.
+    Instantiate and return the specified Pac-Man environment.
 
     Args:
-        environment_name (str): Name of the environment to create ('basic').
+        environment_name (str): The type of environment to create ('basic' or 'ghosts').
+        **params: Additional parameters for environment initialization.
 
     Returns:
-        An environment instance.
+        An instance of BasicPacmanEnvironment or GhostsPacmanEnvironment.
+
+    Raises:
+        ValueError: If an invalid environment name is provided.
     """
     if environment_name == 'basic':
-        environment = BasicPacmanEnvironment(full_hash=full_hash, grid_size=grid_size)
+        environment = BasicPacmanEnvironment(**params)
+    elif environment_name == 'ghosts':
+        environment = GhostsPacmanEnvironment(**params)
     else:
         raise ValueError(f"Invalid environment name: {environment_name}")
 
     return environment
 
 
-def create_drawer(grid_size=10, cell_size=40, framerate=10):
+def create_drawer(grid_size=10, cell_size=40, framerate=3):
     """
-    Creates and returns an instance of the Pygame drawer.
+    Create and return a Pygame drawer instance for rendering the game.
 
     Args:
-        grid_size (int): Size of the grid.
-        cell_size (int): Size of each cell in pixels.
-        framerate (int): Framerate of the game.
+        grid_size (int): The number of cells in each dimension of the grid.
+        cell_size (int): The size of each cell in pixels.
+        framerate (int): The target frame rate for the game.
 
     Returns:
-        PygameDrawer: Instance of the drawer.
+        PygameDrawer: An instance of the Pygame drawer.
     """
     return PygameDrawer(
         grid_size=grid_size,
@@ -81,23 +88,25 @@ def create_drawer(grid_size=10, cell_size=40, framerate=10):
 
 def create_random_controller():
     """
-    Creates and returns an instance of a random controller.
+    Create and return a random action controller.
 
     Returns:
-        BasicController: Instance of the controller.
+        BasicController: An instance of the random controller.
     """
     return BasicController()
 
 
 def create_qlearn_controller(environment, model_path, **params):
     """
-    Creates and trains an instance of a Q-learning controller.
+    Create and optionally train a Q-learning controller.
 
     Args:
-        environment: Instance of the environment on which to train the controller.
+        environment: The environment instance for training.
+        model_path (str): Path to load a pre-trained model (if it exists).
+        **params: Additional parameters for Q-learning agent initialization.
 
     Returns:
-        QLearnAgent: Instance of the controller.
+        QLearnAgent: An instance of the Q-learning controller.
     """
     controller = QLearnAgent(**params)
     if model_path is not None and os.path.exists(model_path):
@@ -106,23 +115,21 @@ def create_qlearn_controller(environment, model_path, **params):
     else:
         print("Training QLearnAgent from scratch...")
         controller.train(environment)
-        if model_path is not None:
-            if not model_path:
-                model_path = f'{uuid4()}.pkl'
-            print(f"Saving best model to {model_path}")
-            controller.save_model(model_path)
+        save_model(controller, params, 'qlearn')
     return controller
 
 
 def create_value_iteration_controller(environment, model_path, **params):
     """
-    Creates and trains an instance of a Value Iteration controller.
+    Create and optionally train a Value Iteration controller.
 
     Args:
-        environment: Instance of the environment on which to train the controller.
+        environment: The environment instance for training.
+        model_path (str): Path to load a pre-trained model (if it exists).
+        **params: Additional parameters for Value Iteration agent initialization.
 
     Returns:
-        ValueIterationAgent: Instance of the controller.
+        ValueIterationAgent: An instance of the Value Iteration controller.
     """
     controller = ValueIterationAgent(environment=environment, **params)
     if model_path is not None and os.path.exists(model_path):
@@ -131,48 +138,79 @@ def create_value_iteration_controller(environment, model_path, **params):
     else:
         print("Training ValueIterationAgent from scratch...")
         controller.train(environment)
-        model_path = f'{uuid4()}.pkl'
-        print(f"Saving best model to {model_path}")
-        controller.save_model(model_path)
+        save_model(controller, params, 'value_iteration')
     return controller
 
-
-def run_game(environment_name, controller_type, grid_size=10, model_path=None, full_hash=True, **params):
+def save_model(controller, params, method):
     """
-    Runs the Pac-Man game with the specified environment and controller type.
+    Save the trained model and its parameters to a unique directory.
 
     Args:
-        environment_name (str): Name of the environment to use ('basic').
-        controller_type (str): Type of controller to use ('random', 'qlearn' or 'value_iteration').
-        full_hash (bool): Use full hashable maps for states or not (only for qlearn with basic env).
+        controller: The trained controller instance.
+        params (dict): The parameters used for training.
+        method (str): The training method ('qlearn' or 'value_iteration').
     """
-    environment = create_environment(environment_name, grid_size=grid_size, full_hash=full_hash)
-    drawer = create_drawer(grid_size=grid_size)
+    checkpoint_folder = os.path.join('checkpoints', method, uuid4())
+    os.mkdir(checkpoint_folder)
+    model_path = os.path.join(checkpoint_folder, 'checkpoint.pkl')
+    print(f"Saving best model to {model_path}")
+    controller.save_model(model_path)
+    with open(os.path.join(checkpoint_folder, 'params'), 'w+') as file:
+        json.dump(params, file)
 
+
+def create_controller(environment, controller_type, **params):
+    """
+    Create and return the specified type of game controller.
+
+    Args:
+        environment: The environment instance for potential training.
+        controller_type (str): The type of controller to create ('random', 'qlearn', or 'value_iteration').
+        **params: Additional parameters for controller initialization.
+
+    Returns:
+        A controller instance of the specified type.
+
+    Raises:
+        ValueError: If an invalid controller type is provided.
+    """
     if controller_type == 'random':
-        controller = create_random_controller()
+        return create_random_controller(**params)
     elif controller_type == 'qlearn':
-        controller = create_qlearn_controller(environment, model_path, **params)
+        return create_qlearn_controller(environment, **params)
     elif controller_type == 'value_iteration':
-        controller = create_value_iteration_controller(environment, model_path, **params)
+        return create_value_iteration_controller(environment, **params)
     else:
         raise ValueError(f"Invalid controller type: {controller_type}")
+
+
+def run_game(environment_args, controller_args, drawer_args):
+    """
+    Set up and run the Pac-Man game with specified components.
+
+    Args:
+        environment_args (dict): Arguments for creating the game environment.
+        controller_args (dict): Arguments for creating the game controller.
+        drawer_args (dict): Arguments for creating the game renderer.
+    """
+    environment = create_environment(**environment_args)
+    drawer = create_drawer(**drawer_args)
+    controller = create_controller(environment, **controller_args)
 
     run_algorithm(environment, drawer, controller)
 
 
-def print_metrics(environment_name, controller_type, grid_size=10, model_path=None, full_hash=True, num_episodes=1000, **params):
+def print_metrics(num_episodes, environment_args, controller_args):
     """
-    Evaluate controller on environment with num_episodes runs.
-    """
-    environment = create_environment(environment_name, grid_size=grid_size, full_hash=full_hash)
+    Evaluate a controller on an environment and print performance metrics.
 
-    if controller_type == 'random':
-        controller = create_random_controller()
-    elif controller_type == 'qlearn':
-        controller = create_qlearn_controller(environment, model_path, **params)
-    else:
-        raise ValueError(f"Invalid controller type: {controller_type}")
+    Args:
+        num_episodes (int): The number of episodes to run for evaluation.
+        environment_args (dict): Arguments for creating the game environment.
+        controller_args (dict): Arguments for creating the game controller.
+    """
+    environment = create_environment(**environment_args)
+    controller = create_controller(environment, **controller_args)
     
     metrics = evaluate_algorithm(environment, controller, num_episodes)
-    print(f"Environment: {environment_name}", f"Controller: {controller_type}", f"Metrics: {metrics}")
+    print(f"Environment: {environment_args['environment_name']}", f"Controller: {controller_args['controller_type']}", f"Metrics: {metrics}")

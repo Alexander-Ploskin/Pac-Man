@@ -5,7 +5,7 @@ A modular framework for experimenting with reinforcement learning algorithms by 
 ---
 
 ## Description
-This project implements a simplified version of the classic Pac-Man game, designed as an environment for experimenting with reinforcement learning (RL) algorithms. The goal is to train an RL agent to control Pac-Man, navigating a grid-based maze, collecting pellets, and avoiding obstacles while maximizing the score.
+This project implements a simplified version of the classic Pac-Man game, designed as an environment for experimenting with reinforcement learning (RL) algorithms. The goal is to train an RL agent to control Pac-Man, navigating a grid-based maze, collecting pellets, avoiding ghosts, and maximizing the score.
 
 The project demonstrates the power of RL techniques by providing a modular framework where various RL algorithms can be applied.
 
@@ -15,17 +15,18 @@ The project demonstrates the power of RL techniques by providing a modular frame
 
 To apply reinforcement learning, we model the Pac-Man game as a Markov Decision Process (MDP). The key elements of our MDP are defined as follows:
 
-*   **States:** A state `s` is defined by the Pac-Man's current position and the remaining pellets' positions on the grid.
+*   **States:** A state `s` is defined by Pac-Man's current position, the remaining pellets' positions, and ghost positions on the grid.
 *   **Actions:** Pac-Man can take one of four actions: `Up`, `Down`, `Left`, or `Right`, corresponding to movements in those directions.
 *   **Rewards:**
-    *   **\+10 Reward:** Eating a pellet grants a reward of +10.
+    *   **+10 Reward:** Eating a pellet grants a reward of +10.
     *   **-1 Reward:** Each move costs a small penalty of -1 to encourage Pac-Man to find the shortest path to pellets and finish the game faster.
-    *   **-50 Reward:** Crashing into a wall yields reward of -50.
-*   **Transition Model:** The transition model `P(s'|s, a)` defines the probability of transitioning to state `s'` after taking action `a` in state `s`. In our simplified environment, the transitions are deterministic (unless an action would cause Pac-Man to run into a wall, in which case it stays in place).
+    *   **-50 Reward:** Crashing into a wall yields a reward of -50.
+    *   **-100 Reward:** Colliding with a ghost results in a reward of -100.
+*   **Transition Model:** The transition model `P(s'|s, a)` defines the probability of transitioning to state `s'` after taking action `a` in state `s`. In our environment, transitions are deterministic for Pac-Man's movements, while ghost movements introduce stochasticity.
 
 ---
 
-## 1. Build and Run
+## Build and Run
 
 1. Clone this repository:
    ```bash
@@ -36,30 +37,25 @@ To apply reinforcement learning, we model the Pac-Man game as a Markov Decision 
    ```bash
    pip install .
    ```
-3. To run random walk policy:
+3. To run the game with different configurations:
    ```bash
-   python cli.py random
-   ```
-   To run Q-learning algorithm (full_hash means that states == full map's objects positions, states == position of packman otherwise):
-   ```bash
-   python cli.py qlearn --full_hash
-   ```
-   To run Value Iteration algorithm:
-   ```bash
-   python cli.py value-iteration --full_hash
+   python cli.py controller=random environment=basic
+   python cli.py controller=qlearn environment=ghosts
+   python cli.py controller=value_iteration environment=basic
    ```
 
 4. To load and run a previously trained model:
    ```bash
-   python cli.py qlearn --model_path checkpoints/qlearn/e8afe3cc-573e-4034-8384-97e0e7fe66dc.pkl --full-hash
+   python cli.py controller=qlearn controller.qlearn.model_path=checkpoints/qlearn//checkpoint.pkl environment=ghosts
    ```
 
-Note: When using --model_path:
+Note: When using model_path:
 - If the file exists, the model will be loaded from it
-- If the flag is omitted or path doesn't exist, the model will be trained from scratch without saving
+- If the path doesn't exist or is omitted, the model will be trained from scratch
+
 ---
 
-## 2. Demonstration
+## Demonstration
 Below is a demonstration of the project in action:
 
 ### Random walk policy:
@@ -73,33 +69,35 @@ Below is a demonstration of the project in action:
 
 ### Cross Entropy
 ![Pac-Man Gameplay Cross Entropy](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/cross_entropy.gif)
+
 ---
 
-## 3. Application Architecture
+## Application Architecture
 
 The project is structured into modular components, making it easy to extend or replace individual parts.
 
-### **Core Components**
+### Core Components
 1. **Environment (`environment`)**:
-   - Defines the grid-based game world, including walls, pellets, and Pac-Man's position.
+   - Defines the game world, including walls, pellets, ghosts, and Pac-Man's position.
    - Handles game logic such as movement, collision detection, and reward calculation.
-   - Example: `BasicPacmanEnvironment` provides a simple implementation of the environment.
+   - Implementations: `BasicPacmanEnvironment` and `GhostsPacmanEnvironment`
 
 2. **Controller (`controller`)**:
    - Decides Pac-Man's actions based on observations from the environment.
-   - Supports different controllers, such as:
+   - Supports different controllers:
      - `BasicController`: Selects random actions for testing.
-     - Future controllers can implement RL algorithms.
+     - `QLearnAgent`: Implements Q-learning algorithm.
+     - `ValueIterationAgent`: Implements Value Iteration algorithm.
 
 3. **Drawer (`drawer`)**:
    - Visualizes the game state using Pygame.
-   - Example: `PygameDrawer` renders walls, pellets, and Pac-Man on a grid.
+   - `PygameDrawer` renders walls, pellets, ghosts, and Pac-Man on a grid.
 
 4. **State (`state`)**:
    - Encapsulates the observation data passed from the environment to the controller.
-   - Includes positions of walls, pellets, and Pac-Man.
+   - Includes positions of walls, pellets, ghosts, and Pac-Man.
 
-### **Workflow**
+### Workflow
 1. The environment generates an observation of the current game state.
 2. The controller receives this observation and selects an action.
 3. The environment processes this action, updates the game state, and calculates rewards.

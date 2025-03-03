@@ -1,79 +1,77 @@
-import click
 from src.pacman_runner import run_game, print_metrics
+import hydra
 
-@click.group()
-def cli():
-    """
-    Runs the environment with different controllers.
-    """
-    pass
 
-@cli.command()
-@click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
-@click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
-@click.option('--eval', is_flag=True, help="Evaluate algorithm. Can be used with --model_path")
-def random(environment, grid_size, eval):
+@hydra.main(version_base=None, config_path="config", config_name="config")
+def main(cfg):
     """
-    Runs the game with a random controller.
+    Unified entry point for running the game with Hydra configuration
     """
-    if eval:
-        print_metrics(environment, 'random', grid_size=grid_size)
+    controller = cfg.controller.type
+    
+    controller_args = {
+        'controller_type': controller,
+    }
+    environment_args = {
+        'environment_name': cfg.environment.type,
+        'grid_size': cfg.grid_size,
+    }
+    drawer_args = {
+        'grid_size': cfg.grid_size,
+        'cell_size': cfg.cell_size,
+        'framerate': cfg.framerate,
+    }
+    
+    if controller == 'random':
+        controller_args.update({})
+    elif controller == 'qlearn':
+        controller_args.update({
+            'alpha': cfg.controller.alpha,
+            'train_epsilon': cfg.controller.train_epsilon,
+            'test_epsilon': cfg.controller.test_epsilon,
+            'gamma': cfg.controller.gamma,
+            'gamma_eps': cfg.controller.gamma_eps,
+            'numTraining': cfg.controller.numTraining,
+            'verbose': cfg.controller.verbose,
+            'model_path': cfg.controller.model_path,
+            'model_path': cfg.controller.model_path,
+        })
+    elif controller == 'value_iteration':
+        controller_args.update({
+            'gamma': cfg.controller.gamma,
+            'theta': cfg.controller.theta,
+            'max_iterations': cfg.controller.max_iterations,
+            'model_path': cfg.controller.model_path,
+        })
     else:
-        run_game(environment, 'random', grid_size=grid_size)
+        raise ValueError(f"Unknown controller: {controller}")
 
-@cli.command()
-@click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
-@click.option('--full_hash', is_flag=True, help='Use full hashable maps for states or not.')
-@click.option('--alpha', type=float, default=0.3, help='learning rate')
-@click.option('--train_epsilon', type=float, default=0.9, help='train exploration rate')
-@click.option('--test_epsilon', type=float, default=0.2, help='test exploration rate')
-@click.option('--gamma', type=float, default=0.98, help='discount factor')
-@click.option('--gamma_eps', type=float, default=0.99997, help='gamma factor for epsilon in training')
-@click.option('--numTraining', type=int, default=100000, help='number of training episodes')
-@click.option('--verbose', is_flag=True, help='Print Q-value, reward and position for debug on each test action')
-@click.option('--model_path', type=str, default=None, help='Path to load/save the Q-learning model.')
-@click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
-@click.option('--eval', is_flag=True, help="Evaluate algorithm. Can be used with --model_path")
-def qlearn(environment, full_hash, alpha, train_epsilon, test_epsilon, gamma, gamma_eps, numtraining, verbose, model_path, grid_size, eval):
-    """
-    Runs the game with a Q-learning controller.
-    """
-    if eval:
-        print_metrics(environment, 'qlearn', full_hash=full_hash,
-                    alpha=alpha, train_epsilon=train_epsilon,
-                    test_epsilon=test_epsilon, gamma=gamma,
-                    gamma_eps=gamma_eps, numTraining=numtraining,
-                    verbose=verbose, model_path=model_path,
-                    grid_size=grid_size)
+    environment = cfg.environment.type
+    if environment == 'basic':
+        environment_args.update({
+            'full_hash': cfg.environment.full_hash,
+        })
+    elif environment == 'ghosts':
+        environment_args.update({
+            'num_ghosts': cfg.environment.num_ghosts,
+            'stability_rate': cfg.environment.stability_rate,
+            'full_hash': cfg.environment.full_hash,
+        })
     else:
-        run_game(environment, 'qlearn', full_hash=full_hash,
-                alpha=alpha, train_epsilon=train_epsilon,
-                test_epsilon=test_epsilon, gamma=gamma,
-                gamma_eps=gamma_eps, numTraining=numtraining,
-                verbose=verbose, model_path=model_path,
-                grid_size=grid_size)
+        raise ValueError(f"Unknown environment: {environment}")
 
-@cli.command()
-@click.option('--environment', type=click.Choice(['basic']), default='basic', help='The environment to run.')
-@click.option('--full_hash', default=True, is_flag=True, help='Use full hashable maps for states or not.')
-@click.option('--gamma', type=float, default=0.98, help='discount factor')
-@click.option('--theta', type=float, default=1e-6, help='convergence threshold')
-@click.option('--numTraining', type=int, default=20, help='number of training episodes')
-@click.option('--grid_size', type=int, default=10, help='number of cells in the grid')
-def value_iteration(environment, full_hash, gamma, theta, numtraining, grid_size):
-    """
-    Runs the game with a Value Iteration controller.
-    """
-    run_game(
-        environment,
-        'value_iteration',
-        grid_size,
-        full_hash=full_hash,
-        gamma=gamma,
-        theta=theta,
-        max_iterations=numtraining,
-    )
-
+    if cfg.eval:
+        print_metrics(
+            num_episodes=cfg.num_episodes,            
+            environment_args=environment_args,
+            controller_args=controller_args,
+        )
+    else:
+        run_game(
+            environment_args=environment_args,
+            controller_args=controller_args,
+            drawer_args=drawer_args,
+        )
 
 if __name__ == '__main__':
-    cli()
+    main()
