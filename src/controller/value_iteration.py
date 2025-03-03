@@ -172,7 +172,6 @@ class ValueIterationAgent(Controller):
         Args:
             file_path (str): Path where to save the model
         """
-        file_path = os.path.join('checkpoints', 'value_iteration', file_path)
         self.values.save(file_path)
 
     def load_model(self, file_path: str) -> None:

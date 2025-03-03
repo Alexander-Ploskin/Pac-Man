@@ -3,6 +3,7 @@ from collections import defaultdict
 import pickle
 import os
 from tqdm import tqdm
+from copy import deepcopy
 
 from src.controller import Controller
 from src.state import Map, Observation, ActionSpaceEnum
@@ -111,7 +112,7 @@ class QLearnAgent(Controller):
         Returns:
             float: The maximum Q-value among legal actions; returns 0.0 if no legal actions are available.
         """
-        q_list = [self.getQValue(state, action) for action in state.get_legal_actions()]
+        q_list = [self.getQValue(state, action) for action in state.directions.keys()]
         return max(q_list) if q_list else 0.0
 
     def updateQ(self, state: Map, action: ActionSpaceEnum, reward: float, qmax: float) -> None:
@@ -137,8 +138,8 @@ class QLearnAgent(Controller):
         Returns:
             ActionSpaceEnum | None: The best action to take; returns None if no legal actions are available.
         """
-        legal_actions = state.get_legal_actions()
-        if self.numTraining > 0 and self.episodesPassed / self.numTraining < 0.9 or not self.train_:
+        legal_actions = list(state.directions.keys())
+        if self.numTraining > 0 and self.episodesPassed / self.numTraining < 0.5:
             if self.lastAction is not None:
 
                 if self.lastAction.get_opposite() in legal_actions:
@@ -174,7 +175,8 @@ class QLearnAgent(Controller):
         """
         observation = env.reset()
         self.lastAction = None
-        self.lastState = observation.map
+        self.lastState = deepcopy(observation.map)
+        total_reward = 0
 
         while not observation.done:
             action = self.best_action(observation.map)
@@ -182,12 +184,15 @@ class QLearnAgent(Controller):
                 break
             self.lastAction = action
             observation = env.step(action)
-            qmax = self.getMaxQ(observation.map)
+            reward = observation.reward
+            total_reward += reward
+            new_state = deepcopy(observation.map)
+            qmax = self.getMaxQ(new_state)
             self.updateQ(self.lastState, action, observation.reward, qmax)
-            self.lastState = observation.map
+            self.lastState = new_state
         self.episodesPassed += 1
 
-        return observation.score
+        return total_reward, observation.score
 
     def train(self, env: PacmanEnvironment) -> None:
         """
@@ -203,16 +208,19 @@ class QLearnAgent(Controller):
         self.episodesPassed = 0
         self.train_ = True
         mean_score = 0.0
+        mean_reward = 0.0
 
         pbar = tqdm(range(self.numTraining), total=self.numTraining)
         for i in pbar:
             if i < self.numTraining * 0.6:
                 self.train_epsilon = self.train_epsilon * self.gamma_eps
-            score = self.run_episode(env)
+            total_reward, score = self.run_episode(env)
             mean_score += score
-            if (i + 1) % 100 == 0:
-                pbar.set_description(f"Mean score on last 100 eposodes: {mean_score / 100:.0f}, Train epsilon: {self.train_epsilon}")
+            mean_reward += total_reward
+            if (i + 1) % 20 == 0:
+                pbar.set_description(f"Last 20 episodes -- Mean score: {mean_score / 20:.0f}, Mean reward: {mean_reward / 20:.0f}, Epsilon: {self.train_epsilon:.4f}")
                 mean_score = 0
+                mean_reward = 0
 
         self.lastAction = None
         self.lastState = None
@@ -255,7 +263,6 @@ class QLearnAgent(Controller):
         Args:
             file_path (str): Path where to save the model
         """
-        file_path = os.path.join('checkpoints', 'qlearn', file_path)
         self.q_value.save(file_path)
 
     def load_model(self, file_path: str) -> None:

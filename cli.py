@@ -34,7 +34,6 @@ def main(cfg):
             'numTraining': cfg.controller.numTraining,
             'verbose': cfg.controller.verbose,
             'model_path': cfg.controller.model_path,
-            'model_path': cfg.controller.model_path,
         })
     elif controller == 'value_iteration':
         controller_args.update({

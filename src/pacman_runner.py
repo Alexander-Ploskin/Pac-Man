@@ -150,7 +150,7 @@ def save_model(controller, params, method):
         params (dict): The parameters used for training.
         method (str): The training method ('qlearn' or 'value_iteration').
     """
-    checkpoint_folder = os.path.join('checkpoints', method, uuid4())
+    checkpoint_folder = os.path.join('checkpoints', method, str(uuid4()))
     os.mkdir(checkpoint_folder)
     model_path = os.path.join(checkpoint_folder, 'checkpoint.pkl')
     print(f"Saving best model to {model_path}")

@@ -107,6 +107,8 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         self.score = 0
         self.step_count = 0
         self.done = False
+
+        self.max_score = len(pellets) * 10
         
         if self.full_hash:
             self.map = MapFullHash(
