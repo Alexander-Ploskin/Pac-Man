@@ -6,6 +6,7 @@ import hydra
 def main(cfg):
     """
     Unified entry point for running the game with Hydra configuration
+
     """
     controller = cfg.controller.type
     

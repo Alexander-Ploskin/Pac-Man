@@ -348,9 +348,10 @@ class DQNAgent(Controller):
             total_reward, score = self.run_episode(env)
             mean_score += score
             mean_reward += total_reward
-            if (i + 1) % 10 == 0:
-                pbar.set_description(f"Mean score on last 10 episodes: {mean_score / 10:.0f}, Mean reward on last 10 episodes: {mean_reward / 10:.0f}, Epsilon: {self.epsilon:.4f}")
+            if (i + 1) % 100 == 0:
+                pbar.set_description(f"Last 100 episodes -- Mean score: {mean_score / 100:.0f}, Mean reward: {mean_reward / 100:.0f}, Epsilon: {self.epsilon:.4f}")
                 mean_score = 0
+                mean_reward = 0
 
         self.lastAction = None
         self.lastState = None
