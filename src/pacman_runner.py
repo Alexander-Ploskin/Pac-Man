@@ -4,7 +4,7 @@ import json
 from uuid import uuid4
 from src.environment import BasicPacmanEnvironment, GhostsPacmanEnvironment
 from src.drawer import PygameDrawer
-from src.controller import BasicController, QLearnAgent, ValueIterationAgent
+from src.controller import BasicController, QLearnAgent, ValueIterationAgent, NeuralNetworkPolicy
 from src.evaluation import evaluate_algorithm
 
 
@@ -180,6 +180,8 @@ def create_controller(environment, controller_type, **params):
         return create_qlearn_controller(environment, **params)
     elif controller_type == 'value_iteration':
         return create_value_iteration_controller(environment, **params)
+    elif controller_type == "reinforce":
+        return NeuralNetworkPolicy()
     else:
         raise ValueError(f"Invalid controller type: {controller_type}")
 

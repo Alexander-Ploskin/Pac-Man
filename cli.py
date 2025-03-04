@@ -42,6 +42,10 @@ def main(cfg):
             'max_iterations': cfg.controller.max_iterations,
             'model_path': cfg.controller.model_path,
         })
+    elif controller == "reinforce":
+        controller_args.update({
+            'model_path': cfg.controller.model_path,
+        })
     else:
         raise ValueError(f"Unknown controller: {controller}")
 
