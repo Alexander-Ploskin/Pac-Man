@@ -62,10 +62,14 @@ $$
 The transition probability $\mathcal{P}(s'|s,a)$ is defined as follows:
 
 For Pac-Man:
-$$\mathcal{P}(s'|s,a) = \begin{cases}
-1 & \text{if } s' \text{ is the deterministic result of action } a \text{ in state } s \\
-0 & \text{otherwise}
-\end{cases}$$
+
+$$
+\mathcal{P}(d'|d) = \begin{cases}
+0.8125 & \text{if } d' = d \text{ and } d \in D \\
+\frac{0.1875}{|D|-1} & \text{if } d' \neq d \text{ and } d' \in D \\
+0 & \text{if } d' \notin D
+\end{cases}
+$$
 
 For ghosts:
 Let $d$ be the current direction of a ghost, and $D$ be the set of possible directions excluding walls.
