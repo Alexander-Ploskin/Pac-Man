@@ -17,5 +17,5 @@ test_epsilon: 0.05
 # other params
 verbose: False
 max_env_steps: 200
-model_path: /home/tohchukovda/skoltech/RL/Pac-Man/checkpoints/dqn/8af2e326-b625-49a3-8a2d-55eb17272310/checkpoint.pkl
+model_path: null
 device: cuda:4
