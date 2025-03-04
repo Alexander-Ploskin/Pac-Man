@@ -146,6 +146,30 @@ In Cross Entropy method we:
 
 By **increasing** the log-probability of action–state pairs that led to higher rewards, REINFORCE effectively shifts the policy towards more **rewarding** behaviors. Over repeated episodes, this procedure refines $\theta$ to enhance performance.
 
+### Neural Network Architecture
+
+**NeuralNetworkPolicy** uses a **Convolutional Neural Network (CNN)** to process the **Pac-Man grid**:
+
+1. **Input**  
+   - A 2D grid (Pac-Man’s map) fed as a single-channel tensor of shape  
+     $(1 \times \text{map-size} \times \text{map-size})$.
+
+2. **Convolution + Pooling Layers**  
+   - Three blocks of convolution (`Conv2d`) interspersed with pooling (`MaxPool2d`, where applicable), activation (`GELU`), and normalization (`BatchNorm2d`).
+   - Extracts **spatial features** essential for Pac-Man gameplay (pellets, walls, ghosts).
+
+3. **Flatten + Dense Layer**  
+   - The final convolution output is **flattened** and passed to a `LazyLinear` layer that produces $ \text{num\_actions} $ **logits**.
+
+4. **Action Selection (Softmax)**  
+   - The logits are divided by a **temperature** $t$ before applying softmax (or log-softmax), yielding action probabilities for **Up, Right, Down, Left**.
+   - Higher $t$ ⇒ more **exploration**; lower $t$ ⇒ more **greedy**.
+
+### Temperature $t$
+
+During training, $t$ is **decreased** from larger values, which gradually transitions the policy from exploratory to more deterministic behavior.
+
+
 #### Usage Overview
 
 - Collect **entire episodes** (trajectories) by sampling from $\pi_\theta$.
