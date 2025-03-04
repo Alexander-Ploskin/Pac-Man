@@ -194,14 +194,14 @@ for i in 1 to N do:
 
         while episode not finished do:
             a_t ~ π_θ(a_t | s_t)            # Sample action a_t from policy
-            s_{t+1}, r_{t+1} ← step_env(a_t) # Take action, observe next state & reward
-            trajectory.append((s_t, a_t, r_{t+1}))
+            s_{t+1}, R_{t+1} ← step_env(a_t) # Take action, observe next state & reward
+            trajectory.append((s_t, a_t, R_{t+1}))
             s_t ← s_{t+1}
 
         # 2. Compute returns for each step in trajectory
         G ← 0
         for t in reverse(trajectory indices):
-            G ← r_{t+1} + γ * G
+            G ← R_{t+1} + γ * G
             # Store G_t in the trajectory for updating θ
             trajectory[t].return ← G
 
