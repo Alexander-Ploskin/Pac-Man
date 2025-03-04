@@ -125,29 +125,23 @@ In Cross Entropy method we:
 1. **Sample Trajectory**  
    Interact with the environment under the current policy to gather a sequence of experiences:
 
-   $$
-   \tau = \{ (s_0, a_0, r_0), \ldots, (s_T, a_T, r_T) \}.
-   $$
+   $$\tau = \{ (s_0, a_0, r_0), \ldots, (s_T, a_T, r_T) \}.$$
 
 2. **Compute Returns**  
    For each time step $t$ in the trajectory, determine the discounted total reward:
 
-   $$
-   G_t = \sum_{k=t}^{T} \gamma^{(k - t)} \, r_k,
-   $$
+   $$G_t = \sum_{k=t}^{T} \gamma^{(k - t)} \, r_k,$$
 
    where $\gamma \in [0,1]$ is a discount factor.
 
 3. **Gradient Update**  
    After collecting a full trajectory, update parameters $\theta$ through **gradient ascent**:
 
-   $$
-   \theta \leftarrow \theta \;+\; \alpha 
+   $$\theta \leftarrow \theta \;+\; \alpha 
        \sum_{t=0}^{T}
        \Bigl(
          \nabla_\theta \log \pi_\theta(a_t \mid s_t)
-       \Bigr) \, G_t,
-   $$
+       \Bigr) \, G_t,$$
 
    where:
    - $\alpha$ is the learning rate,
