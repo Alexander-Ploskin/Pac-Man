@@ -64,13 +64,13 @@ class QNetworkConv(nn.Module):
         
         # Слой свертки
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(state_size, 8, kernel_size=3, padding=1),
+            nn.Conv2d(1, 8, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            # nn.MaxPool2d(kernel_size=2),
             
             nn.Conv2d(8, 16, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            # nn.MaxPool2d(kernel_size=2),
             
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
@@ -80,14 +80,16 @@ class QNetworkConv(nn.Module):
         # Полносвязные слои
         self.fc_layers = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(64 * torch.prod(state_size) // 8, hidden_size),
+            nn.Linear(32 * state_size[0] * state_size[1] // 4, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, action_size)
         )
+        self.state_size = state_size
 
         self.float()
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
+        state = state.unsqueeze(1)
         state = state.float()
         x = self.conv_layers(state)
         x = self.fc_layers(x)
@@ -170,6 +172,28 @@ class DQNAgent(Controller):
         self.step_count = 0
 
         self.writer = SummaryWriter()
+        hyperparams = {
+            'nn_type': self.nn_type,
+            'state_size': self.state_size,
+            'action_size': self.action_size,
+            'alpha': self.alpha,
+            'gamma': self.gamma,
+            'test_epsilon': self.test_epsilon,
+            'epsilon': self.epsilon,
+            'epsilon_decay': self.epsilon_decay,
+            'replay_buffer_size': self.replay_buffer_size,
+            'batch_size': self.batch_size,
+            'target_update_interval': self.target_update_interval,
+            'numTraining': self.numTraining,
+            'verbose': self.verbose,
+            'device': self.device,
+            'max_env_steps': self.max_env_steps,
+        }
+
+        hyperparams_text = "\n".join([f"{key}: {value}" for key, value in hyperparams.items()])
+
+        # Сохранение гиперпараметров в TensorBoard
+        self.writer.add_text("Hyperparameters", hyperparams_text, global_step=0)
 
     def getQValue(self, state: torch.Tensor, action: int) -> float:
         """
@@ -184,7 +208,8 @@ class DQNAgent(Controller):
         """
         with torch.no_grad():
             state = state.to(self.device)
-            q_values = self.q_network(state)
+            q_values = self.q_network(state[None, ...])
+            q_values = q_values.squeeze(0)
             return q_values[action].item()
 
     def best_action(self, state: torch.Tensor) -> ActionSpaceEnum | None:
@@ -339,6 +364,9 @@ class DQNAgent(Controller):
             mean_reward += total_reward
             if (i + 1) % 20 == 0:
                 pbar.set_description(f"Last 20 episodes -- Mean score: {mean_score / 20:.0f}, Mean reward: {mean_reward / 20:.0f}, Epsilon: {self.epsilon:.4f}")
+                self.writer.add_scalar("Mean score", mean_score / 20, self.step_count)
+                self.writer.add_scalar("Mean reward", mean_reward / 20, self.step_count)
+                self.writer.add_scalar("Epsilon", self.epsilon, self.step_count)
                 mean_score = 0
                 mean_reward = 0
 
@@ -356,9 +384,9 @@ class DQNAgent(Controller):
             ActionSpaceEnum | None: The selected action; returns None if no valid action is available.
         """
         self.train_ = False
-        return self.best_action(observation.map)
+        return self.best_action(observation.map.to_tensor())
 
-    def save(self, filename: str) -> None:
+    def save_model(self, filename: str) -> None:
         """
         Saves the Q-network, target network, optimizer state, replay buffer, and other relevant parameters to a file.
 
@@ -384,7 +412,7 @@ class DQNAgent(Controller):
             'nn_type': self.nn_type
         }, filename)
 
-    def load(self, filename: str) -> None:
+    def load_model(self, filename: str) -> None:
         """
         Loads the Q-network, target network, optimizer state, replay buffer, and other relevant parameters from a file.
 

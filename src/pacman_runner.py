@@ -184,7 +184,7 @@ def save_model(controller, params, method):
         method (str): The training method ('qlearn' or 'value_iteration').
     """
     checkpoint_folder = os.path.join('checkpoints', method, str(uuid4()))
-    os.mkdir(checkpoint_folder)
+    os.makedirs(checkpoint_folder)
     model_path = os.path.join(checkpoint_folder, 'checkpoint.pkl')
     print(f"Saving best model to {model_path}")
     controller.save_model(model_path)

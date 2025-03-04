@@ -175,6 +175,8 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         new_y = current_position.y + delta[1]
         new_position = Position(new_x, new_y)
 
+        reward1 = self.compute_reward(self.map, current_position, new_position)
+
         # Check if new position is a wall.
         if new_position in self.map.walls:
             new_position = current_position  # Remain in the same position.
@@ -189,8 +191,6 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
         # Collision detection
         if self.map.pacman_position in self.map.ghost_positions:
             self.done = True
-        
-        reward1 = self.compute_reward(self.map, current_position, new_position)
 
         for ghost in self.ghosts:
             ghost.move(self.map)
