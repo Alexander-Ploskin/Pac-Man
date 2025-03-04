@@ -146,7 +146,7 @@ In Cross Entropy method we:
 
 By **increasing** the log-probability of action–state pairs that led to higher rewards, REINFORCE effectively shifts the policy towards more **rewarding** behaviors. Over repeated episodes, this procedure refines $\theta$ to enhance performance.
 
-### Neural Network Architecture
+#### Neural Network Architecture
 
 **NeuralNetworkPolicy** uses a **Convolutional Neural Network (CNN)** to process the **Pac-Man grid**:
 
@@ -165,7 +165,7 @@ By **increasing** the log-probability of action–state pairs that led to higher
    - The logits are divided by a **temperature** $t$ before applying softmax (or log-softmax), yielding action probabilities for **Up, Right, Down, Left**.
    - Higher $t$ ⇒ more **exploration**; lower $t$ ⇒ more **greedy**.
 
-### Temperature $t$
+#### Temperature $t$
 
 During training, $t$ is **decreased** from larger values, which gradually transitions the policy from exploratory to more deterministic behavior.
 
