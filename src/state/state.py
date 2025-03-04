@@ -147,11 +147,16 @@ class Map:
         state = np.zeros((self.size, self.size))
         for wall in self.walls:
             state[wall.y, wall.x] = -1
+
         for pellet in self.pellets:
             state[pellet.y, pellet.x] = 1
-        state[self.pacman_position.y, self.pacman_position.x] = 2
+        
         for ghost in self.ghost_positions:
             state[ghost.x, ghost.y] = -2
+
+        state[self.pacman_position.y, self.pacman_position.x] = 2
+
+        return state.reshape(-1)
 
 
 class MapFullHash(Map):
