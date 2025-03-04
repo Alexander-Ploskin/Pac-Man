@@ -179,7 +179,19 @@ During training, $t$ is **decreased** from larger values, which gradually transi
 
 ## Experiments
 
+### REINFORCE
 
+#### Reward on basic env
+![reward basic](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/reward_basic.jpg)
+
+#### Score on basic env
+![score basic](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/score_basic.jpg)
+
+#### Reward on ghosts env
+![reward ghosts](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/reward_ghosts.jpg)
+
+#### Score on ghosts env
+![score ghosts](https://raw.githubusercontent.com/Alexander-Ploskin/Pac-Man/master/assets/score_ghosts.jpg)
 
 Summary of results on `BasicPacmanEnvironment(grid_size=10, max_steps=200)` over 1000 games:
 
