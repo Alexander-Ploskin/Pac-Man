@@ -84,8 +84,8 @@ $$
 ### Finish Conditions
 
 The game terminates when:
-1. Pac-Man collects all pellets: $\sum_{i,j} \mathbb{1}_{s_{ij}=1} = 0$
-2. Pac-Man collides with a ghost: $\exists (i,j) : s_{ij} = 2 \wedge (s_{i+1,j} = -2 \vee s_{i-1,j} = -2 \vee s_{i,j+1} = -2 \vee s_{i,j-1} = -2)$
+1. Pac-Man collects all pellets: $$\sum_{i,j} \mathbb{1}_{s_{ij}=1} = 0$$
+2. Pac-Man collides with a ghost: $$\exists (i,j) : s_{ij} = 2 \wedge (s_{i+1,j} = -2 \vee s_{i-1,j} = -2 \vee s_{i,j+1} = -2 \vee s_{i,j-1} = -2)$$
 
 ---
 
