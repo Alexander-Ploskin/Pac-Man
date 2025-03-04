@@ -153,19 +153,21 @@ By **increasing** the log-probability of action–state pairs that led to higher
 - Perform **gradient ascent** using $\nabla_\theta \log \pi_\theta(a_t \mid s_t)\,G_t$.
 
 
-
-
 ## Experiments
+
+
 
 Summary of results on `BasicPacmanEnvironment(grid_size=10, max_steps=200)` over 1000 games:
 
-| | Random | Q-learning | Q-learning(full-hash) | Cross Entropy| REINFORCE |
+| | Random | Q-learning(cut state) | Q-learning | Cross Entropy| REINFORCE |
 |:- | :----------- | :----------- | :--- | :--- | :--- |
 | Mean score| 403.01     | 489.11      | 583.33 | 599.98| 600 |
 
+(**cut state** means that state space is only *pacman position* without *pellets positions*)
+
 Summary of results on `GhostsPacmanEnvironment(grid_size=10, max_steps=200, num_ghosts=2)` over 1000 games:
 
-| | Random | Q-learning(full-hash) | REINFORCE |
+| | Random | Q-learning | REINFORCE |
 |:-  | :----------- | :--- | :--- |
 | Mean score|  113.73  | 128.47      | 143.65 |
 | Mean steps| 35.077 | 38.256 | 64.482|
