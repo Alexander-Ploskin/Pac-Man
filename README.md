@@ -13,16 +13,78 @@ The project demonstrates the power of RL techniques by providing a modular frame
 
 ## MDP Problem Definition
 
-To apply reinforcement learning, we model the Pac-Man game as a Markov Decision Process (MDP). The key elements of our MDP are defined as follows:
+We model the Pac-Man game as a Markov Decision Process (MDP) defined by the tuple $(\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R})$, where:
 
-*   **States:** A state `s` is defined by Pac-Man's current position, the remaining pellets' positions, and ghost positions on the grid.
-*   **Actions:** Pac-Man can take one of four actions: `Up`, `Down`, `Left`, or `Right`, corresponding to movements in those directions.
-*   **Rewards:**
-    *   **+10 Reward:** Eating a pellet grants a reward of +10.
-    *   **-1 Reward:** Each move costs a small penalty of -1 to encourage Pac-Man to find the shortest path to pellets and finish the game faster.
-    *   **-50 Reward:** Crashing into a wall yields a reward of -50.
-    *   **-100 Reward:** Colliding with a ghost results in a reward of -100.
-*   **Transition Model:** The transition model `P(s'|s, a)` defines the probability of transitioning to state `s'` after taking action `a` in state `s`. In our environment, transitions are deterministic for Pac-Man's movements, while ghost movements introduce stochasticity.
+### State Space $\mathcal{S}$
+
+The state space is represented by a matrix $S \in \mathbb{R}^{n \times n}$, where $n$ is the grid size. Each element $s_{ij}$ of the matrix can take the following values:
+
+$$
+s_{ij} = \begin{cases}
+0 & \text{empty cell} \\
+1 & \text{pellet} \\
+-1 & \text{wall} \\
+2 & \text{Pac-Man position} \\
+-2 & \text{ghost position}
+\end{cases}
+$$
+
+### Action Space $\mathcal{A}$
+
+The action space is defined as:
+
+$$
+\mathcal{A} = \{\text{Up}, \text{Down}, \text{Left}, \text{Right}\}
+$$
+
+Mathematically, we can represent these actions as unit vectors:
+
+$$
+\text{Up} = (-1, 0), \text{Down} = (1, 0), \text{Left} = (0, -1), \text{Right} = (0, 1)
+$$
+
+### Reward Function $\mathcal{R}$
+
+The reward function $$\mathcal{R}: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \rightarrow \mathbb{R}$$ is defined as:
+
+$$
+\mathcal{R}(s, a, s') = \begin{cases}
+10 & \text{if Pac-Man eats a pellet} \\
+-1 & \text{for each move} \\
+-50 & \text{if Pac-Man crashes into a wall} \\
+-100 & \text{if Pac-Man collides with a ghost} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+### Transition Model $\mathcal{P}$
+
+The transition probability $\mathcal{P}(s'|s,a)$ is defined as follows:
+
+For Pac-Man:
+$$
+\mathcal{P}(s'|s,a) = \begin{cases}
+1 & \text{if } s' \text{ is the deterministic result of action } a \text{ in state } s \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+For ghosts:
+Let $d$ be the current direction of a ghost, and $D$ be the set of possible directions excluding walls.
+
+$$
+\mathcal{P}(d'|d) = \begin{cases}
+0.8125 & \text{if } d' = d \text{ and } d \in D \\
+\frac{0.1875}{|D|-1} & \text{if } d' \neq d \text{ and } d' \in D \\
+0 & \text{if } d' \notin D
+\end{cases}
+$$
+
+### Finish Conditions
+
+The game terminates when:
+1. Pac-Man collects all pellets: $$\sum_{i,j} \mathbb{1}_{s_{ij}=1} = 0$$
+2. Pac-Man collides with a ghost: $$\exists (i,j) : s_{ij} = 2 \wedge (s_{i+1,j} = -2 \vee s_{i-1,j} = -2 \vee s_{i,j+1} = -2 \vee s_{i,j-1} = -2)$$
 
 ---
 
