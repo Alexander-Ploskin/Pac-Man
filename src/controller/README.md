@@ -159,6 +159,15 @@ By **increasing** the log-probability of action–state pairs that led to higher
 
 Summary of results on `BasicPacmanEnvironment(grid_size=10, max_steps=200)` over 1000 games:
 
-| | Random | Q-learning | Q-learning(full-hash) | Cross Entropy|
-|:- | :----------- | :----------- | :--- | :--- |
-| Mean score| 403.01     | 489.11      | 553.72 | 599.98
+| | Random | Q-learning | Q-learning(full-hash) | Cross Entropy| REINFORCE |
+|:- | :----------- | :----------- | :--- | :--- | :--- |
+| Mean score| 403.01     | 489.11      | 583.33 | 599.98| 600 |
+
+Summary of results on `GhostsPacmanEnvironment(grid_size=10, max_steps=200, num_ghosts=2)` over 1000 games:
+
+| | Random | Q-learning(full-hash) | REINFORCE |
+|:-  | :----------- | :--- | :--- |
+| Mean score|  113.73  | 128.47      | 143.65 |
+| Mean steps| 35.077 | 38.256 | 64.482|
+
+
