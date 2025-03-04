@@ -1,12 +1,12 @@
 import random
 from collections import deque
-import logging
 import time
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from src.controller import Controller
@@ -14,74 +14,7 @@ from src.state import Map, Observation, ActionSpaceEnum
 from src.environment import PacmanEnvironment
 
 
-MAX_ENV_STEPS = 200
-
-
-def map_to_state_vector(map_object: Map) -> torch.Tensor:
-    """
-    Converts a Map object to a state tensor (vector) representing the grid.
-
-    Each position in the grid is encoded as follows:
-    - 0: Empty
-    - 1: Pac-Man
-    - 2: Pellet
-
-    Args:
-        map_object (Map): The Map object.
-
-    Returns:
-        torch.Tensor: A tensor representing the grid state.
-    """
-
-    return map_object.state_tensor.flatten()
-
-
-def map_to_state_matrix(map_object: Map) -> torch.Tensor:
-    """
-    Converts a Map object to a state tensor (matrix) representing the grid.
-
-    Each position in the grid is encoded as follows:
-    - 0: Empty
-    - 1: Pac-Man
-    - 2: Pellet
-    - -1: Wall
-
-    Args:
-        map_object (Map): The Map object.
-
-    Returns:
-        torch.Tensor: A tensor representing the grid state.
-    """
-
-    return map_object.state_tensor
-
-
 class QNetworkDense(nn.Module):
-    """
-    A neural network for estimating Q-values of state-action pairs.
-    """
-
-    def __init__(self, state_size, action_size, hidden_size=64):
-        """
-        Initializes the Q-Network.
-
-        Args:
-            state_size (int): The size of the state space.
-            action_size (int): The size of the action space.
-            hidden_size (int): The number of units in the hidden layer.
-        """
-        super(QNetworkDense, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, action_size)
-
-    def forward(self, state):
-        x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
-
-
-class QNetworkConv(nn.Module):
     """
     A neural network for estimating Q-values of state-action pairs.
     """
@@ -96,10 +29,70 @@ class QNetworkConv(nn.Module):
             hidden_size (int): The number of units in the hidden layer.
         """
         super(QNetworkDense, self).__init__()
-        pass
+        self.sequantial = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(state_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, action_size)
+        )
+        self.float()
 
-    def forward(self, state):
-        pass
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        state = state.float()
+        x = self.sequantial(state)
+
+        return x
+
+
+class QNetworkConv(nn.Module):
+    """
+    A neural network for estimating Q-values of state-action pairs using convolutional layers.
+    """
+
+    def __init__(self, state_size, action_size, hidden_size=128):
+        """
+        Initializes the Q-Network.
+
+        Args:
+            state_size (int): The size of the state space.
+            action_size (int): The size of the action space.
+            hidden_size (int): The number of units in the hidden layer.
+        """
+        super(QNetworkConv, self).__init__()
+        
+        # Слой свертки
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(state_size, 8, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2)
+        )
+        
+        # Полносвязные слои
+        self.fc_layers = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * torch.prod(state_size) // 8, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, action_size)
+        )
+
+        self.float()
+
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        state = state.float()
+        x = self.conv_layers(state)
+        x = self.fc_layers(x)
+        
+        return x
 
 
 class DQNAgent(Controller):
@@ -111,7 +104,8 @@ class DQNAgent(Controller):
                  gamma=0.98, train_epsilon=0.9, test_epsilon=0.05,
                  epsilon_decay=0.99997, replay_buffer_size=1000,
                  batch_size=64, target_update_interval=1000,
-                 numTraining=100000, verbose=False, device="cpu"):
+                 numTraining=100000, verbose=False, max_env_steps=200,
+                 device="cuda"):
         """
         Initializes the DQN agent.
 
@@ -129,6 +123,7 @@ class DQNAgent(Controller):
             target_update_interval (int): Interval to update the target network.
             numTraining (int): Number of training episodes.
         """
+        self.nn_type = nn_type
         self.state_size = state_size
         self.action_size = action_size
         self.alpha = alpha
@@ -142,15 +137,13 @@ class DQNAgent(Controller):
         self.numTraining = numTraining
         self.verbose = verbose
         self.device = device
+        self.max_env_steps = max_env_steps
 
         # Q-Network and Target Network
-        self.nn_type = nn_type
         if self.nn_type == 'dense':
-            self.state_converter = map_to_state_vector
             self.q_network = QNetworkDense(state_size, action_size)
             self.target_network = QNetworkDense(state_size, action_size)
         if self.nn_type == 'conv':
-            self.state_converter = map_to_state_matrix
             self.q_network = QNetworkConv(state_size, action_size)
             self.target_network = QNetworkConv(state_size, action_size)
         self.q_network = self.q_network.to(self.device)
@@ -162,7 +155,7 @@ class DQNAgent(Controller):
             param.requires_grad = False
 
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.alpha)
-        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * MAX_ENV_STEPS // self.target_update_interval)  # 200 is from maximum number of samples in environment
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * self.max_env_steps // self.target_update_interval)
 
         self.loss = nn.MSELoss()
 
@@ -176,13 +169,7 @@ class DQNAgent(Controller):
         self.train_ = True
         self.step_count = 0
 
-        # Logger setup
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler = logging.FileHandler('dqn_agent.log')
-        file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
+        self.writer = SummaryWriter()
 
     def getQValue(self, state: torch.Tensor, action: int) -> float:
         """
@@ -200,12 +187,12 @@ class DQNAgent(Controller):
             q_values = self.q_network(state)
             return q_values[action].item()
 
-    def best_action(self, state: Map) -> ActionSpaceEnum | None:
+    def best_action(self, state: torch.Tensor) -> ActionSpaceEnum | None:
         """
         Determines the best action to take in a given state based on current Q-values.
 
         Args:
-            state (Map): The current state of Pac-Man's environment.
+            state (torch.Tensor): The current state of Pac-Man's environment.
 
         Returns:
             ActionSpaceEnum | None: The best action to take; returns None if no legal actions are available.
@@ -215,15 +202,15 @@ class DQNAgent(Controller):
                 (not self.train_ and random.random() < self.test_epsilon)):
             return random.choice(actions)
 
-        state_tensor = self.state_converter(state)
         with torch.no_grad():
-            state_tensor = state_tensor.to(self.device)
-            q_values = self.q_network(state_tensor)
+            state = state.to(self.device)
+            q_values = self.q_network(state[None, ...])
+            q_values = q_values.squeeze(0)
             best_action_index = torch.argmax(q_values).item()
             best_action = actions[best_action_index]
         return best_action
 
-    def remember(self, state: Map, action: ActionSpaceEnum, reward: float, next_state: Map, done: bool):
+    def remember(self, state: torch.Tensor, action: ActionSpaceEnum, reward: float, next_state: torch.Tensor, done: bool):
         """
         Adds a transition to the replay buffer.
 
@@ -254,10 +241,10 @@ class DQNAgent(Controller):
         encodings = {k: i for i, k in enumerate(Map.directions.keys())}
 
         
-        state_tensors = torch.stack([self.state_converter(state) for state in states]).to(self.device)
+        state_tensors = torch.stack(states).to(self.device)
         action_tensors = torch.tensor([encodings[action] for action in actions], dtype=torch.int64).to(self.device)
         reward_tensors = torch.tensor(rewards, dtype=torch.float).to(self.device)
-        next_state_tensors = torch.stack([self.state_converter(next_state) for next_state in next_states]).to(self.device)
+        next_state_tensors = torch.stack(next_states).to(self.device)
         done_tensors = torch.tensor(dones, dtype=torch.bool).to(self.device)
 
         # Compute Q(s, a) and Q(s', a')
@@ -286,13 +273,15 @@ class DQNAgent(Controller):
         if self.step_count % self.target_update_interval == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())
 
-            # for param in self.target_network.parameters():
-            #     param.requires_grad = False
+            for param in self.target_network.parameters():
+                param.requires_grad = False
+
             self.scheduler.step()
         
             # Log the loss and learning rate
             current_lr = self.optimizer.param_groups[0]['lr']
-            self.logger.info(f"Step: {self.step_count}, Loss: {loss.item():.4f}, Learning Rate: {current_lr:.6f}")
+            self.writer.add_scalar("Loss", loss.item(), self.step_count)
+            self.writer.add_scalar("Learning rate", current_lr, self.step_count)
         
         # full_time_end = time.perf_counter()
         # print(full_time_end - full_time_start, measure_time, measure_time / (full_time_end - full_time_start))
@@ -308,14 +297,14 @@ class DQNAgent(Controller):
         """
         observation = env.reset()
         self.lastAction = None
-        self.lastState = observation.map
+        self.lastState = observation.map.to_tensor()
         total_reward = 0
 
         while not observation.done:
-            action = self.best_action(observation.map)
+            action = self.best_action(self.lastState)
             next_observation = env.step(action)
             reward = next_observation.reward
-            next_state = next_observation.map
+            next_state = next_observation.map.to_tensor()
             done = next_observation.done
 
             self.remember(self.lastState, action, reward, next_state, done)
@@ -348,8 +337,8 @@ class DQNAgent(Controller):
             total_reward, score = self.run_episode(env)
             mean_score += score
             mean_reward += total_reward
-            if (i + 1) % 100 == 0:
-                pbar.set_description(f"Last 100 episodes -- Mean score: {mean_score / 100:.0f}, Mean reward: {mean_reward / 100:.0f}, Epsilon: {self.epsilon:.4f}")
+            if (i + 1) % 20 == 0:
+                pbar.set_description(f"Last 20 episodes -- Mean score: {mean_score / 20:.0f}, Mean reward: {mean_reward / 20:.0f}, Epsilon: {self.epsilon:.4f}")
                 mean_score = 0
                 mean_reward = 0
 
@@ -409,11 +398,9 @@ class DQNAgent(Controller):
 
         # Initialize networks based on loaded type
         if self.nn_type == 'dense':
-            self.state_converter = map_to_state_vector
             self.q_network = QNetworkDense(self.state_size, self.action_size).to(self.device)
             self.target_network = QNetworkDense(self.state_size, self.action_size).to(self.device)
         elif self.nn_type == 'conv':
-            self.state_converter = map_to_state_matrix
             self.q_network = QNetworkConv(self.state_size, self.action_size).to(self.device)
             self.target_network = QNetworkConv(self.state_size, self.action_size).to(self.device)
         else:
@@ -432,7 +419,7 @@ class DQNAgent(Controller):
                     state[k] = v.to(self.device)
         
         # Load scheduler
-        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * MAX_ENV_STEPS // self.target_update_interval)
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.numTraining * self.max_env_steps // self.target_update_interval)
         self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
         # Load other parameters

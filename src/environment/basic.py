@@ -1,36 +1,6 @@
-import torch
-from typing import Sequence
-
 from src.environment import PacmanEnvironment
 from src.state import Position, Observation, Map, ActionSpaceEnum, MapFullHash
 
-
-def get_state_matrix(grid_size: int, walls: Sequence[Position],
-                        pellets: Sequence[Position], pacman_position: Position) -> torch.Tensor:
-    """
-    Converts a Map's objects positions to a state tensor (matrix) representing the grid.
-
-    Each position in the grid is encoded as follows:
-    - 0: Empty
-    - 1: Pac-Man
-    - 2: Pellet
-    - -1: Wall
-
-    Args:
-        map_object (Map): The Map object.
-
-    Returns:
-        torch.Tensor: A tensor representing the grid state.
-    """
-
-    state = torch.zeros((grid_size, grid_size), dtype=torch.float32)
-    for pos in walls:
-        state[pos.x, pos.y] = -1.0
-    for pos in pellets:
-        state[pos.x, pos.y] = 2.0
-    state[pacman_position.x, pacman_position.y] = 1.0
-
-    return state
 
 class BasicPacmanEnvironment(PacmanEnvironment):
     """
@@ -41,7 +11,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
     hitting walls.
     """
 
-    def __init__(self, grid_size=10, cell_size=40, max_steps=200, full_hash=False, inner_walls=True):
+    def __init__(self, grid_size=10, cell_size=40, max_steps=200, full_hash=False):
         """
         Initialize the environment parameters and reset it.
 
@@ -55,12 +25,11 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         self.cell_size = cell_size
         self.max_steps = max_steps
         self.full_hash = full_hash
-        self.inner_walls = inner_walls
-
+        
     def get_grid_size(self):
         return self.grid_size
 
-    def reset(self) -> Observation:
+    def reset(self, inner_walls: bool = True) -> Observation:
         """
         Reset the environment to its initial configuration.
 
@@ -75,33 +44,31 @@ class BasicPacmanEnvironment(PacmanEnvironment):
             walls.add(Position(self.grid_size - 1, i))
             walls.add(Position(i, 0))
             walls.add(Position(i, self.grid_size - 1))
-
+        
         # Add internal walls (an example pattern)
-        if self.inner_walls:
+        if inner_walls:
             for r in range(2, self.grid_size - 2, 2):
                 walls.add(Position(r, self.grid_size // 2))
-
-        # Populate the grid with pellets where there are no walls 
+        
+        # Populate the grid with pellets where there are no walls
         pellets = set()
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 if Position(r, c) not in walls:
                     pellets.add(Position(r, c))
-
+        
         # Place Pac-Man at the grid center and remove any pellet at that position
         pacman_position = Position(self.grid_size // 2, self.grid_size // 2)
         if pacman_position in pellets:
             pellets.remove(pacman_position)
-
+        
         # Initialize game state variables
         self.score = 0
         self.step_count = 0
         self.done = False
 
         self.max_score = len(pellets) * 10
-
-        state_tensor = get_state_matrix(self.grid_size, walls, pellets, pacman_position)
-
+        
         if self.full_hash:
             self.map = MapFullHash(
                 walls=walls,
@@ -109,8 +76,7 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 pacman_position=pacman_position,
                 ghost_positions=set(),
                 ghost_position_to_color={},
-                size=self.grid_size,
-                state_tensor=state_tensor
+                size=self.grid_size
             )
         else:
             self.map = Map(
@@ -119,10 +85,9 @@ class BasicPacmanEnvironment(PacmanEnvironment):
                 pacman_position=pacman_position,
                 ghost_positions=set(),
                 ghost_position_to_color={},
-                size=self.grid_size,
-                state_tensor=state_tensor
+                size=self.grid_size
             )
-
+        
         return Observation(
             reward=0,
             done=False,
@@ -180,8 +145,6 @@ class BasicPacmanEnvironment(PacmanEnvironment):
         if new_position in self.map.walls:
             new_position = current_position  # Remain in the same position.
         else:
-            self.map.state_tensor[self.map.pacman_position.x, self.map.pacman_position.y] = 0.0
-            self.map.state_tensor[new_position.x, new_position.y] = 1.0
             # Move Pac-Man to the new position.
             self.map.pacman_position = new_position
             # If a pellet is present, remove it.

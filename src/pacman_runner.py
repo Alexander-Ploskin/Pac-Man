@@ -2,10 +2,11 @@ import pygame
 import os
 import json
 from uuid import uuid4
+import numpy as np
+
 from src.environment import BasicPacmanEnvironment, GhostsPacmanEnvironment
 from src.drawer import PygameDrawer
 from src.controller import BasicController, QLearnAgent, ValueIterationAgent, DQNAgent
-from src.controller import map_to_state_vector, map_to_state_matrix
 from src.evaluation import evaluate_algorithm
 
 
@@ -154,9 +155,9 @@ def create_dqn_controller(environment, model_path=None, **params):
     observation = environment.reset()
     if "nn_type" in params:
         if params["nn_type"] == "dense":
-            state_size = map_to_state_vector(observation.map).size(0)
+            state_size = np.prod(observation.map.to_numpy().shape)
         elif params["nn_type"] == "conv":
-            state_size = map_to_state_matrix(observation.map).size()
+            state_size = observation.map.to_numpy().shape
         else:
             raise AttributeError("Unknown nn_type")
     action_size = len(observation.map.directions)

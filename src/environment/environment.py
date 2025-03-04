@@ -8,7 +8,7 @@ class PacmanEnvironment(ABC):
     """
 
     @abstractmethod
-    def reset(self) -> Observation:
+    def reset(self, inner_walls: bool) -> Observation:
         pass
     
     @abstractmethod

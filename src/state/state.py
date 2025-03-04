@@ -88,9 +88,6 @@ class Map:
         (ActionSpaceEnum.LEFT, (-1, 0))
     ])
 
-    state_tensor: torch.Tensor
-
-
     def __hash__(self):
         """
         Returns a hash value for the Map object.
@@ -156,6 +153,11 @@ class Map:
         state[self.pacman_position.y, self.pacman_position.x] = 2
         for ghost in self.ghost_positions:
             state[ghost.x, ghost.y] = -2
+
+        return state
+    
+    def to_tensor(self):
+        return torch.from_numpy(self.to_numpy())
 
 
 class MapFullHash(Map):

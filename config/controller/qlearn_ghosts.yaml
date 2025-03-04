@@ -1,0 +1,9 @@
+type: qlearn
+alpha: 0.25
+train_epsilon: 0.9
+test_epsilon: 0.05
+gamma: 0.98
+gamma_eps: 0.99995
+numTraining: 100000
+verbose: False
+model_path: null
