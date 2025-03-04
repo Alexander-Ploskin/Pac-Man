@@ -185,16 +185,23 @@ class GhostsPacmanEnvironment(PacmanEnvironment):
             if new_position in self.map.pellets:
                 self.map.pellets.remove(new_position)
                 self.score += 10
-
-        for ghost in self.ghosts:
-            ghost.move(self.map)
-        self.map.ghost_position_to_color = {ghost.position: ghost.color for ghost in self.ghosts}
         
         # Collision detection
         if self.map.pacman_position in self.map.ghost_positions:
             self.done = True
+        
+        reward1 = self.compute_reward(self.map, current_position, new_position)
 
-        reward = self.compute_reward(self.map, current_position, new_position)
+        for ghost in self.ghosts:
+            ghost.move(self.map)
+        self.map.ghost_position_to_color = {ghost.position: ghost.color for ghost in self.ghosts}
+
+        if self.map.pacman_position in self.map.ghost_positions:
+            self.done = True
+
+        reward2 = self.compute_reward(self.map, current_position, new_position)
+
+        reward = min(reward1, reward2)
         
         self.step_count += 1
         
