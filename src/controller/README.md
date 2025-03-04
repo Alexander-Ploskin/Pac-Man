@@ -137,11 +137,7 @@ In Cross Entropy method we:
 3. **Gradient Update**  
    After collecting a full trajectory, update parameters $\theta$ through **gradient ascent**:
 
-   $$\theta \leftarrow \theta \;+\; \alpha 
-       \sum_{t=0}^{T}
-       \Bigl(
-         \nabla_\theta \log \pi_\theta(a_t \mid s_t)
-       \Bigr) \, G_t,$$
+   $$\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \log \pi_{\theta}(a_t | s_t) G_t$$
 
    where:
    - $\alpha$ is the learning rate,
