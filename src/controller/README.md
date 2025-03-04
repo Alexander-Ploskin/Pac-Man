@@ -125,12 +125,12 @@ In Cross Entropy method we:
 1. **Sample Trajectory**  
    Interact with the environment under the current policy to gather a sequence of experiences:
 
-   $$\tau = \{ (s_0, a_0, r_0), \ldots, (s_T, a_T, r_T) \}.$$
+   $$\tau = \{ (s_0, a_0, R_0), \ldots, (s_T, a_T, R_T) \}.$$
 
 2. **Compute Returns**  
    For each time step $t$ in the trajectory, determine the discounted total reward:
 
-   $$G_t = \sum_{k=t}^{T} \gamma^{(k - t)} \, r_k,$$
+   $$G_t = \sum_{k=t}^{T} \gamma^{(k - t)} \ R_k,$$
 
    where $\gamma \in [0,1]$ is a discount factor.
 
