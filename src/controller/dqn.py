@@ -419,7 +419,7 @@ class DQNAgent(Controller):
         Args:
             filename (str): The path to the file from which the agent's state will be loaded.
         """
-        checkpoint = torch.load(filename, map_location=self.device)
+        checkpoint = torch.load(filename, map_location=self.device, weights_only=False)
 
         # Load network type
         self.nn_type = checkpoint.get('nn_type', 'dense')

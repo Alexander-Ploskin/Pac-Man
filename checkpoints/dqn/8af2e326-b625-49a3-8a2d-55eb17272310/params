@@ -1,0 +1,1 @@
+{"max_env_steps": 200, "nn_type": "conv", "alpha": 0.001, "gamma": 0.98, "train_epsilon": 0.9, "test_epsilon": 0.05, "epsilon_decay": 0.999, "replay_buffer_size": 200, "batch_size": 32, "target_update_interval": 50, "numTraining": 2000, "verbose": false, "device": "cuda:4", "state_size": [10, 10], "action_size": 4}

@@ -3,19 +3,19 @@ type: dqn
 # common training params
 alpha: 0.001
 batch_size: 32
-numTraining: 2000
+numTraining: 4000
 nn_type: conv  # or use conv
 
 # RL training params
 target_update_interval: 50
 replay_buffer_size: 200
-epsilon_decay: 0.999
+epsilon_decay: 0.9995
 gamma: 0.98
-train_epsilon: 0.9
+train_epsilon: 0.5
 test_epsilon: 0.05
 
 # other params
 verbose: False
 max_env_steps: 200
-model_path: /home/tohchukovda/skoltech/RL/Pac-Man/checkpoints/dqn/8af2e326-b625-49a3-8a2d-55eb17272310/checkpoint.pkl
+model_path: null
 device: cuda:4
