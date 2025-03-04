@@ -170,11 +170,53 @@ By **increasing** the log-probability of action–state pairs that led to higher
 During training, $t$ is **decreased** from larger values, which gradually transitions the policy from exploratory to more deterministic behavior.
 
 
-#### Usage Overview
+## REINFORCE Algorithm
 
-- Collect **entire episodes** (trajectories) by sampling from $\pi_\theta$.
-- Compute the **discounted returns** $G_t$.
-- Perform **gradient ascent** using $\nabla_\theta \log \pi_\theta(a_t \mid s_t)\,G_t$.
+```pseudo
+Algorithm: REINFORCE (Monte Carlo Policy Gradient)
+
+Input:
+    - Number of training iterations: N
+    - Number of episodes per iteration: M
+    - Discount factor: γ ∈ [0, 1]
+    - Learning rate: α
+
+Initialize policy parameters θ
+
+for i in 1 to N do:
+    Initialize total_loss ← 0
+    Initialize total_return ← 0
+
+    for episode in 1 to M do:
+        # 1. Generate an episode (trajectory) using π_θ
+        s_0 ← initial_state
+        trajectory ← empty list
+
+        while episode not finished do:
+            a_t ~ π_θ(a_t | s_t)            # Sample action a_t from policy
+            s_{t+1}, r_{t+1} ← step_env(a_t) # Take action, observe next state & reward
+            trajectory.append((s_t, a_t, r_{t+1}))
+            s_t ← s_{t+1}
+
+        # 2. Compute returns for each step in trajectory
+        G ← 0
+        for t in reverse(trajectory indices):
+            G ← r_{t+1} + γ * G
+            # Store G_t in the trajectory for updating θ
+            trajectory[t].return ← G
+
+        # 3. Accumulate policy gradient loss
+        episode_loss ← 0
+        episode_return ← sum of all rewards in trajectory
+        for each (s_t, a_t, G_t) in trajectory do:
+            episode_loss ← episode_loss - (G_t * log π_θ(a_t | s_t))
+
+        total_loss ← total_loss + episode_loss
+        total_return ← total_return + episode_return
+
+    # 4. Update θ via gradient descent on total_loss
+    θ ← θ - α * ∇_θ [ total_loss / M ]
+```
 
 
 ## Experiments
