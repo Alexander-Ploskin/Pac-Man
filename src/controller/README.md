@@ -118,7 +118,7 @@ In Cross Entropy method we:
 
 #### Description
 
-**REINFORCE** (Williams, 1992) is a classic **policy gradient** algorithm in Reinforcement Learning. Instead of learning a value function, it **directly** optimizes the parameters $\theta$ of a stochastic policy $\pi_\theta(a \mid s)$to maximize expected returns.
+**REINFORCE** (Williams, 1992) is a classic **policy gradient** algorithm in Reinforcement Learning. Instead of learning a value function, it **directly** optimizes the parameters $\theta$ of a stochastic policy $\pi_\theta(a \mid s)$ to maximize expected returns.
 
 **Key Steps**:
 
