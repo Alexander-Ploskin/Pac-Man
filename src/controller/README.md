@@ -137,7 +137,7 @@ In Cross Entropy method we:
 3. **Gradient Update**  
    After collecting a full trajectory, update parameters $\theta$ through **gradient ascent**:
 
-   $$\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \log \pi_{\theta}(a_t | s_t) G_t$$
+   $$\theta_{t+1} = \theta_t + \alpha \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t | s_t) G_t$$
 
    where:
    - $\alpha$ is the learning rate,
@@ -159,7 +159,7 @@ By **increasing** the log-probability of action–state pairs that led to higher
    - Extracts **spatial features** essential for Pac-Man gameplay (pellets, walls, ghosts).
 
 3. **Flatten + Dense Layer**  
-   - The final convolution output is **flattened** and passed to a `LazyLinear` layer that produces $ \text{num\_actions} $ **logits**.
+   - The final convolution output is **flattened** and passed to a `LazyLinear` layer that produces $\text{num-actions}$ **logits**.
 
 4. **Action Selection (Softmax)**  
    - The logits are divided by a **temperature** $t$ before applying softmax (or log-softmax), yielding action probabilities for **Up, Right, Down, Left**.
