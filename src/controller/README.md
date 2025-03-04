@@ -114,6 +114,57 @@ In Cross Entropy method we:
 - Repeat until convergence
 
 
+### 5. REINFORCE
+
+#### Description
+
+**REINFORCE** (Williams, 1992) is a classic **policy gradient** algorithm in Reinforcement Learning. Instead of learning a value function, it **directly** optimizes the parameters $\theta$ of a stochastic policy $\pi_\theta(a \mid s)$to maximize expected returns.
+
+**Key Steps**:
+
+1. **Sample Trajectory**  
+   Interact with the environment under the current policy to gather a sequence of experiences:
+
+   $$
+   \tau = \{ (s_0, a_0, r_0), \ldots, (s_T, a_T, r_T) \}.
+   $$
+
+2. **Compute Returns**  
+   For each time step $t$ in the trajectory, determine the discounted total reward:
+
+   $$
+   G_t = \sum_{k=t}^{T} \gamma^{(k - t)} \, r_k,
+   $$
+
+   where $\gamma \in [0,1]$ is a discount factor.
+
+3. **Gradient Update**  
+   After collecting a full trajectory, update parameters $\theta$ through **gradient ascent**:
+
+   $$
+   \theta \leftarrow \theta \;+\; \alpha 
+       \sum_{t=0}^{T}
+       \Bigl(
+         \nabla_\theta \log \pi_\theta(a_t \mid s_t)
+       \Bigr) \, G_t,
+   $$
+
+   where:
+   - $\alpha$ is the learning rate,
+   - $\nabla_\theta \log \pi_\theta(a_t \mid s_t)$ measures how the probability of choosing $a_t$ in $s_t$ depends on $\theta$,
+   - $G_t$ is the return following time step $t$.
+
+By **increasing** the log-probability of action–state pairs that led to higher rewards, REINFORCE effectively shifts the policy towards more **rewarding** behaviors. Over repeated episodes, this procedure refines $\theta$ to enhance performance.
+
+#### Usage Overview
+
+- Collect **entire episodes** (trajectories) by sampling from $\pi_\theta$.
+- Compute the **discounted returns** $G_t$.
+- Perform **gradient ascent** using $\nabla_\theta \log \pi_\theta(a_t \mid s_t)\,G_t$.
+
+
+
+
 ## Experiments
 
 Summary of results on `BasicPacmanEnvironment(grid_size=10, max_steps=200)` over 1000 games:
