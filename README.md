@@ -172,3 +172,10 @@ The project is structured into modular components, making it easy to extend or r
 2. The controller receives this observation and selects an action.
 3. The environment processes this action, updates the game state, and calculates rewards.
 4. The drawer visualizes the updated state.
+
+
+# Authors
+1. Danil Tokhchukov
+2. Aleksander Ploskin
+3. Sameer Tantry
+4. Vladislav Gromadskii
