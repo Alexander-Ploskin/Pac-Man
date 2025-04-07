@@ -176,6 +176,6 @@ The project is structured into modular components, making it easy to extend or r
 
 # Authors
 1. [Aleksander Ploskin](https://github.com/Alexander-Ploskin)
-2. [Sameer Tantry](https://github.com/sameertantry)
-3. [Danil Tokhchukov](https://github.com/makriot)
+2. [Danil Tokhchukov](https://github.com/makriot)
+3. [Sameer Tantry](https://github.com/sameertantry)
 4. [Vladislav Gromadskii](https://github.com/WladGrm)
